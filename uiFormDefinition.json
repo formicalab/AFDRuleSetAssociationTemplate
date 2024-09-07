@@ -3,7 +3,7 @@
     "view": {
         "kind": "Form",
         "properties": {
-            "title": "Test Form View",
+            "title": "FrontDoor RuleSet Associations",
             "steps": [
                 {
                     "name": "basics",
@@ -51,7 +51,10 @@
                             "type": "Microsoft.Solutions.ArmApiControl",
                             "request": {
                                 "method": "GET",
-                                "path": "[concat(steps('basics').afdProfileSelector.id, '/ruleSets?api-version=2023-05-01')]"
+                                "path": "[concat(steps('basics').afdProfileSelector.id, '/ruleSets?api-version=2023-05-01')]",
+                                "transforms": {
+                                    "list": "[value|[*].{label:name, value:id},[{label: '---', value: '---'}]][]"
+                                }
                             }
                         },
                         {
@@ -64,7 +67,7 @@
                             "filterPlaceholder": "Filter items ...",
                             "constraints": {
                                 "required": false,
-                                "allowedValues": "[map(steps('basics').afdRuleSetGet.value, (item) => parse(concat('{\"label\":\"', item.name, '\",\"value\":\"', item.id, '\"}')))]"
+                                "allowedValues": "[steps('basics').afdRuleSetGet.transformed.list]"
                             },
                             "infoMessages": [],
                             "visible": true
@@ -79,7 +82,7 @@
                             "filterPlaceholder": "Filter items ...",
                             "constraints": {
                                 "required": false,
-                                "allowedValues": "[map(steps('basics').afdRuleSetGet.value, (item) => parse(concat('{\"label\":\"', item.name, '\",\"value\":\"', item.id, '\"}')))]"
+                                "allowedValues": "[steps('basics').afdRuleSetGet.transformed.list]"
                             },
                             "infoMessages": [],
                             "visible": true
