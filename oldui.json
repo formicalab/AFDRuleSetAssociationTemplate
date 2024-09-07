@@ -25,7 +25,7 @@
                             }
                         },
                         {
-                            "name": "afdRuleSetSelector",
+                            "name": "afdRuleSetGet",
                             "type": "Microsoft.Solutions.ArmApiControl",
                             "request": {
                                 "method": "GET",
@@ -38,7 +38,7 @@
                             "label": "Rule Set to associate to the route(s)",
                             "filter": true,
                             "constraints": {
-                                "allowedValues": "[map(steps('basics').afdRuleSetSelector.value, (item) => parse(concat('{\"label\":\"', item.name, '\",\"value\":\"', item.id, '\"}')))]",
+                                "allowedValues": "[map(steps('basics').afdRuleGet.value, (item) => parse(concat('{\"label\":\"', item.name, '\",\"value\":\"', item.id, '\"}')))]",
                                 "required": true
                             },
                             "visible": true

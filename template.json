@@ -4,26 +4,14 @@
     "parameters": {
         "wwwposteit-routing-ruleset": {
             "type": "String",
-            "allowedValues": [
-                "---",
-                "Azure10Roma90",
-                "Azure20Roma80",
-                "Azure30Roma70"
-            ],
-            "defaultValue": "Azure10Roma90",
+            "defaultValue": "",
             "metadata": {
                 "description": "The ruleset to apply to the route"
             }
         },
         "postepayposteit-routing-ruleset": {
             "type": "String",
-            "allowedValues": [
-                "---",
-                "Azure10Roma90",
-                "Azure20Roma80",
-                "Azure30Roma70"
-            ],
-            "defaultValue": "Azure10Roma90",
+            "defaultValue": "",
             "metadata": {
                 "description": "The ruleset to apply to the route"
             }
@@ -57,7 +45,7 @@
                 "originGroup": {
                     "id": "[concat(variables('afd_profile_id'), '/originGroups/origingroup-www-poste-it-AZ')]"
                 },
-                "ruleSets": "[if(equals(parameters('wwwposteit-routing-ruleset'), '---'), json('[]'), array(createObject('id', concat(variables('afd_profile_id'), '/ruleSets/', parameters('wwwposteit-routing-ruleset')))))]"
+                "ruleSets": "[if(equals(parameters('wwwposteit-routing-ruleset'), ''), json('[]'), array(createObject('id', parameters('wwwposteit-routing-ruleset'))))]"
             }
         },
         {
@@ -76,7 +64,7 @@
                 "originGroup": {
                     "id": "[concat(variables('afd_profile_id'), '/originGroups/origingroup-postepay-poste-it-AZ')]"
                 },
-                "ruleSets": "[if(equals(parameters('postepayposteit-routing-ruleset'), '---'), json('[]'), array(createObject('id', concat(variables('afd_profile_id'), '/ruleSets/', parameters('postepayposteit-routing-ruleset')))))]"
+                "ruleSets": "[if(equals(parameters('postepayposteit-routing-ruleset'), ''), json('[]'), array(createObject('id', parameters('postepayposteit-routing-ruleset'))))]"
             }
         }
     ]
