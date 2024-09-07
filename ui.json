@@ -1,0 +1,109 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2021-09-09/uiFormDefinition.schema.json",
+    "view": {
+        "kind": "Form",
+        "properties": {
+            "title": "FrontDoor RuleSet Associations",
+            "steps": [
+                {
+                    "name": "basics",
+                    "label": "Basics",
+                    "elements": [
+                        {
+                            "name": "resourceScope",
+                            "type": "Microsoft.Common.ResourceScope"
+                        },
+                        {
+                            "name": "afdProfileSelector",
+                            "type": "Microsoft.Solutions.ResourceSelector",
+                            "label": "Select the Azure Front Door Profile",
+                            "resourceType": "Microsoft.Cdn/profiles",
+                            "options": {
+                                "filter": {
+                                    "subscription": "onBasics"
+                                }
+                            }
+                        },
+                        {
+                            "name": "afdRuleSetSelector",
+                            "type": "Microsoft.Solutions.ArmApiControl",
+                            "request": {
+                                "method": "GET",
+                                "path": "[concat(steps('basics').afdProfileSelector.id, '/ruleSets?api-version=2023-05-01')]"
+                            }
+                        },
+                        {
+                            "name": "afdRuleSetList",
+                            "type": "Microsoft.Common.DropDown",
+                            "label": "Rule Set to associate to the route(s)",
+                            "filter": true,
+                            "constraints": {
+                                "allowedValues": "[map(steps('basics').afdRuleSetSelector.value, (item) => parse(concat('{\"label\":\"', item.name, '\",\"value\":\"', item.id, '\"}')))]",
+                                "required": true
+                            },
+                            "visible": true
+                        },
+                        {
+                            "name": "afdEndpointSelector",
+                            "type": "Microsoft.Solutions.ArmApiControl",
+                            "request": {
+                                "method": "GET",
+                                "path": "[concat(steps('basics').afdProfileSelector.id, '/afdEndpoints?api-version=2023-05-01')]"
+                            }
+                        },
+                        {
+                            "name": "afdEndpointList",
+                            "type": "Microsoft.Common.DropDown",
+                            "label": "Endpoint",
+                            "filter": true,
+                            "constraints": {
+                                "allowedValues": "[map(steps('basics').afdEndpointSelector.value, (item) => parse(concat('{\"label\":\"', item.name, '\",\"value\":\"', item.id, '\"}')))]",
+                                "required": true
+                            },
+                            "visible": true
+                        },
+                        {
+                            "name": "debug",
+                            "type": "Microsoft.Common.InfoBox",
+                            "visible": true,
+                            "options": {
+                                "icon": "None",
+                                "text": "[steps('basics').afdEndpointList]",
+                                "uri": "https://www.microsoft.com"
+                            }
+                        },
+                        {
+                            "name": "afdRouteSelector",
+                            "type": "Microsoft.Solutions.ArmApiControl",
+                            "request": {
+                                "method": "GET",
+                                "path": "[concat(steps('basics').afdEndpointList, '/routes?api-version=2023-05-01')]"
+                            }
+                        },
+                        {
+                            "name": "routeList",
+                            "type": "Microsoft.Common.DropDown",
+                            "label": "Routes",
+                            "placeholder": "Select a route",
+                            "multiselect": true,
+                            "selectAll": true,
+                            "filter": true,
+                            "constraints": {
+                                "allowedValues": "[map(steps('basics').afdRouteSelector.value, (item) => parse(concat('{\"label\":\"', item.name, '\",\"value\":\"', item.id, '\"}')))]",
+                                "required": "true"
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "outputs": {
+        "parameters": {
+            "location": "[steps('basics').resourceScope.location.name]"
+        },
+        "kind": "ResourceGroup",
+        "location": "[steps('basics').resourceScope.location.name]",
+        "resourceGroupId": "[steps('basics').resourceScope.resourceGroup.id]"
+    }
+}

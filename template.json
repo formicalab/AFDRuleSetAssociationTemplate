@@ -1,0 +1,90 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "wwwposteit-routing-ruleset": {
+            "type": "String",
+            "allowedValues": [
+                "---",
+                "Azure10Roma90",
+                "Azure20Roma80",
+                "Azure30Roma70"
+            ],
+            "defaultValue": "Azure10Roma90",
+            "metadata": {
+                "description": "The ruleset to apply to the route"
+            }
+        },
+        "postepayposteit-routing-ruleset": {
+            "type": "String",
+            "allowedValues": [
+                "---",
+                "Azure10Roma90",
+                "Azure20Roma80",
+                "Azure30Roma70"
+            ],
+            "defaultValue": "Azure10Roma90",
+            "metadata": {
+                "description": "The ruleset to apply to the route"
+            }
+        }
+    },
+    "variables": {
+        "afd_profile_name": "afd-itn-001",
+        "afd_endpoint_name": "endpoint-apps",
+        "afd_profile_id": "[resourceId('Microsoft.Cdn/profiles', variables('afd_profile_name'))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Cdn/profiles/afdendpoints",
+            "apiVersion": "2024-02-01",
+            "name": "[concat(variables('afd_profile_name'), '/', variables('afd_endpoint_name'))]",
+            "location": "global"
+        },
+        {
+            "type": "Microsoft.Cdn/profiles/afdendpoints/routes",
+            "apiVersion": "2024-02-01",
+            "name": "[concat(variables('afd_profile_name'), '/', variables('afd_endpoint_name'), '/routing-www-poste-it')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Cdn/profiles/afdendpoints', variables('afd_profile_name'), variables('afd_endpoint_name'))]"
+            ],
+            "properties": {
+                "customDomains": [
+                    {
+                        "id": "[concat(variables('afd_profile_id'), '/customDomains/domain-www-poste-it')]"
+                    }
+                ],
+                "originGroup": {
+                    "id": "[concat(variables('afd_profile_id'), '/originGroups/origingroup-www-poste-it-AZ')]"
+                },
+                "ruleSets": [
+                    {
+                        "id": "[concat(variables('afd_profile_id'), '/ruleSets/', parameters('wwwposteit-routing-ruleset'))]"
+                    }
+                ]
+            },
+            {
+                "type": "Microsoft.Cdn/profiles/afdendpoints/routes",
+                "apiVersion": "2024-02-01",
+                "name": "[concat(variables('afd_profile_name'), '/', variables('afd_endpoint_name'), '/routing-postepay-poste-it')]",
+                "dependsOn": [
+                    "[resourceId('Microsoft.Cdn/profiles/afdendpoints', variables('afd_profile_name'), variables('afd_endpoint_name'))]"
+                ],
+                "properties": {
+                    "customDomains": [
+                        {
+                            "id": "[concat(variables('afd_profile_id'), '/customDomains/domain-postepay-poste-it')]"
+                        }
+                    ],
+                    "originGroup": {
+                        "id": "[concat(variables('afd_profile_id'), '/originGroups/origingroup-postepay-poste-it-AZ')]"
+                    },
+                    "ruleSets": [
+                        {
+                            "id": "[concat(variables('afd_profile_id'), '/ruleSets/', parameters('postepayposteit-routing-ruleset'))]"
+                        }
+                    ]
+                }
+            }
+        ]
+    }
