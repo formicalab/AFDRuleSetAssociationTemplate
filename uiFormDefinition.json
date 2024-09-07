@@ -56,36 +56,72 @@
                                     "list": "[value|[*].{label:name, value:id},[{label: '---', value: '---'}]][]"
                                 }
                             }
+                        }
+                    ]
+                },
+                {
+                    "name": "associations",
+                    "label": "Associations",
+                    "elements": [
+                        {
+                            "name": "wwwposteit-ruleSetSection",
+                            "type": "Microsoft.Common.Section",
+                            "label": "www.poste.it",
+                            "visible": true,
+                            "elements": [
+                                {
+                                    "name": "wwwposteit-Checkbox",
+                                    "type": "Microsoft.Common.CheckBox",
+                                    "label": "Modify:",
+                                    "constraints": {
+                                        "required": false
+                                    }
+                                },
+                                {
+                                    "name": "wwwposteit-routing-ruleset",
+                                    "type": "Microsoft.Common.DropDown",
+                                    "label": "RuleSet to associate to the route:",
+                                    "subLabel": "",
+                                    "filter": true,
+                                    "filterPlaceholder": "Filter items ...",
+                                    "constraints": {
+                                        "required": false,
+                                        "allowedValues": "[steps('basics').afdRuleSetGet.transformed.list]"
+                                    },
+                                    "infoMessages": [],
+                                    "visible": true
+                                }
+                            ]
                         },
                         {
-                            "name": "wwwposteit-routing-ruleset",
-                            "type": "Microsoft.Common.DropDown",
-                            "label": "Wwwposteit-routing-ruleset",
-                            "subLabel": "",
-                            "toolTip": "The ruleset to apply to the route",
-                            "filter": true,
-                            "filterPlaceholder": "Filter items ...",
-                            "constraints": {
-                                "required": false,
-                                "allowedValues": "[steps('basics').afdRuleSetGet.transformed.list]"
-                            },
-                            "infoMessages": [],
-                            "visible": true
-                        },
-                        {
-                            "name": "postepayposteit-routing-ruleset",
-                            "type": "Microsoft.Common.DropDown",
-                            "label": "Postepayposteit-routing-ruleset",
-                            "subLabel": "",
-                            "toolTip": "The ruleset to apply to the route",
-                            "filter": true,
-                            "filterPlaceholder": "Filter items ...",
-                            "constraints": {
-                                "required": false,
-                                "allowedValues": "[steps('basics').afdRuleSetGet.transformed.list]"
-                            },
-                            "infoMessages": [],
-                            "visible": true
+                            "name": "postepayposteit-ruleSetSection",
+                            "type": "Microsoft.Common.Section",
+                            "label": "postepay.poste.it",
+                            "visible": true,
+                            "elements": [
+                                {
+                                    "name": "postepayposteit-Checkbox",
+                                    "type": "Microsoft.Common.CheckBox",
+                                    "label": "Modify:",
+                                    "constraints": {
+                                        "required": false
+                                    }
+                                },
+                                {
+                                    "name": "postepayposteit-routing-ruleset",
+                                    "type": "Microsoft.Common.DropDown",
+                                    "label": "RuleSet to associate to the route:",
+                                    "subLabel": "",
+                                    "filter": true,
+                                    "filterPlaceholder": "Filter items ...",
+                                    "constraints": {
+                                        "required": false,
+                                        "allowedValues": "[steps('basics').afdRuleSetGet.transformed.list]"
+                                    },
+                                    "infoMessages": [],
+                                    "visible": true
+                                }
+                            ]
                         }
                     ]
                 }
@@ -94,13 +130,14 @@
         "outputs": {
             "parameters": {
                 "location": "[steps('basics').resourceScope.location.name]",
-                "wwwposteit-routing-ruleset": "[steps('basics').wwwposteit-routing-ruleset]",
-                "postepayposteit-routing-ruleset": "[steps('basics').postepayposteit-routing-ruleset]"
+                "wwwposteit-routing-ruleset": "[steps('associations').wwwposteit-ruleSetSection.wwwposteit-routing-ruleset]",
+                "wwwposteit-modify": "[steps('associations').wwwposteit-ruleSetSection.wwwposteit-Checkbox]",
+                "postepayposteit-routing-ruleset": "[steps('associations').postepayposteit-ruleSetSection.postepayposteit-routing-ruleset]",
+                "postepayposteit-modify": "[steps('associations').postepayposteit-ruleSetSection.postepayposteit-Checkbox]"
             },
             "kind": "ResourceGroup",
             "location": "[steps('basics').resourceScope.location.name]",
             "resourceGroupId": "[steps('basics').resourceScope.resourceGroup.id]"
         }
-
     }
 }

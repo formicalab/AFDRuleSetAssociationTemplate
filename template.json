@@ -2,15 +2,29 @@
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
+        "wwwposteit-modify": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "description": "True to modify the route, false to ignore it"
+            }
+        },
         "wwwposteit-routing-ruleset": {
-            "type": "String",
+            "type": "string",
             "defaultValue": "",
             "metadata": {
                 "description": "The ruleset to apply to the route"
             }
         },
+        "postepayposteit-modify": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "description": "True to modify the route, false to ignore it"
+            }
+        },
         "postepayposteit-routing-ruleset": {
-            "type": "String",
+            "type": "string",
             "defaultValue": "",
             "metadata": {
                 "description": "The ruleset to apply to the route"
@@ -36,6 +50,7 @@
             "dependsOn": [
                 "[resourceId('Microsoft.Cdn/profiles/afdendpoints', variables('afd_profile_name'), variables('afd_endpoint_name'))]"
             ],
+            "condition": "[parameters('wwwposteit-modify')]",
             "properties": {
                 "customDomains": [
                     {
@@ -55,6 +70,7 @@
             "dependsOn": [
                 "[resourceId('Microsoft.Cdn/profiles/afdendpoints', variables('afd_profile_name'), variables('afd_endpoint_name'))]"
             ],
+            "condition": "[parameters('postepayposteit-modify')]",
             "properties": {
                 "customDomains": [
                     {
