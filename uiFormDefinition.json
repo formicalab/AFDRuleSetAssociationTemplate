@@ -108,9 +108,9 @@
                                 {
                                     "name": "CurrentRuleSet",
                                     "type": "Microsoft.Common.TextBlock",
-                                    "visible": true,
+                                    "visible": false,
                                     "options": {
-                                        "text": "[last(split(first(steps('associations').wwwposteitSection.Route.transformed.id),'/'))]"
+                                        "text": "[if(empty(last(split(first(steps('associations').wwwposteitSection.Route.transformed.id),'/'))), '---', last(split(first(steps('associations').wwwposteitSection.Route.transformed.id),'/')))]"
                                     }
                                 },
                                 {
@@ -126,7 +126,7 @@
                                     "type": "Microsoft.Common.DropDown",
                                     "label": "RuleSet to associate to the route:",
                                     "subLabel": "",
-                                    "defaultValue": "[last(split(first(steps('associations').wwwposteitSection.Route.transformed.id),'/'))]",
+                                    "defaultValue": "[if(empty(last(split(first(steps('associations').wwwposteitSection.Route.transformed.id),'/'))), '---', last(split(first(steps('associations').wwwposteitSection.Route.transformed.id),'/')))]",
                                     "filter": true,
                                     "filterPlaceholder": "Filter items ...",
                                     "constraints": {
@@ -158,9 +158,9 @@
                                 {
                                     "name": "CurrentRuleSet",
                                     "type": "Microsoft.Common.TextBlock",
-                                    "visible": true,
+                                    "visible": false,
                                     "options": {
-                                        "text": "[last(split(first(steps('associations').postepayposteitSection.Route.transformed.id),'/'))]"
+                                        "text": "[if(empty(last(split(first(steps('associations').postepayposteitSection.Route.transformed.id),'/'))), '---', last(split(first(steps('associations').postepayposteitSection.Route.transformed.id),'/')))]"
                                     }
                                 },
                                 {
@@ -176,7 +176,7 @@
                                     "type": "Microsoft.Common.DropDown",
                                     "label": "RuleSet to associate to the route:",
                                     "subLabel": "",
-                                    "defaultValue": "[last(split(first(steps('associations').postepayposteitSection.Route.transformed.id),'/'))]",
+                                    "defaultValue": "[if(empty(last(split(first(steps('associations').postepayposteitSection.Route.transformed.id),'/'))), '---', last(split(first(steps('associations').postepayposteitSection.Route.transformed.id),'/')))]",
                                     "filter": true,
                                     "filterPlaceholder": "Filter items ...",
                                     "constraints": {
