@@ -2,11 +2,23 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "wwwposteit-routing-ruleset": {
+        "afd_profile_id": {
+            "value": "/subscriptions/4a570962-701a-475e-bf5b-8dc76ec748ff/resourceGroups/rg-afd-itn-001/providers/Microsoft.Cdn/profiles/afd-itn-001"
+        },
+        "afd_endpoint_id": {
+            "value": "/subscriptions/4a570962-701a-475e-bf5b-8dc76ec748ff/resourcegroups/rg-afd-itn-001/providers/Microsoft.Cdn/profiles/afd-itn-001/afdendpoints/endpoint-apps"
+        },
+        "wwwposteit-ruleset": {
             "value": "---"
         },
-        "postepayposteit-routing-ruleset": {
-            "value": "Azure10Roma90"
+        "wwwposteit-modify": {
+            "value": false
+        },
+        "postepayposteit-ruleset": {
+            "value": "---"
+        },
+        "postepayposteit-modify": {
+            "value": false
         }
     }
 }

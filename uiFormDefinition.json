@@ -195,6 +195,8 @@
         "outputs": {
             "parameters": {
                 "location": "[steps('basics').resourceScope.location.name]",
+                "afd_profile_id": "[steps('basics').afdProfileSelector.id]",
+                "afd_endpoint_id": "[steps('basics').afdEndpointSelector]",
                 "wwwposteit-ruleset": "[steps('associations').wwwposteitSection.wwwposteit-ruleset]",
                 "wwwposteit-modify": "[steps('associations').wwwposteitSection.wwwposteit-Checkbox]",
                 "postepayposteit-ruleset": "[steps('associations').postepayposteitSection.postepayposteit-ruleset]",

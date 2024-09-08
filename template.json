@@ -2,6 +2,18 @@
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
+        "afd_profile_id": {
+            "type": "string",
+            "metadata": {
+                "description": "The ID of the Azure Front Door profile"
+            }
+        },
+        "afd_endpoint_id": {
+            "type": "string",
+            "metadata": {
+                "description": "The name of the Azure Front Door endpoint"
+            }
+        },
         "wwwposteit-modify": {
             "type": "bool",
             "defaultValue": false,
@@ -11,7 +23,7 @@
         },
         "wwwposteit-ruleset": {
             "type": "string",
-            "defaultValue": "",
+            "defaultValue": "---",
             "metadata": {
                 "description": "The ruleset to apply to the route"
             }
@@ -25,16 +37,21 @@
         },
         "postepayposteit-ruleset": {
             "type": "string",
-            "defaultValue": "",
+            "defaultValue": "---",
             "metadata": {
                 "description": "The ruleset to apply to the route"
             }
         }
     },
     "variables": {
-        "afd_profile_name": "afd-itn-001",
-        "afd_endpoint_name": "endpoint-apps",
-        "afd_profile_id": "[resourceId('Microsoft.Cdn/profiles', variables('afd_profile_name'))]"
+        "afd_profile_name": "[last(split(parameters('afd_profile_id'), '/'))]",
+        "afd_endpoint_name": "[last(split(parameters('afd_endpoint_id'), '/'))]",
+        "wwwposteit-domain": "[concat(parameters('afd_profile_id'), '/customDomains/domain-www-poste-it')]",
+        "wwwposteit-route": "[concat(variables('afd_profile_name'), '/', variables('afd_endpoint_name'), '/routing-www-poste-it')]",
+        "wwwposteit-origingroup": "[concat(parameters('afd_profile_id'), '/originGroups/origingroup-www-poste-it-AZ')]",
+        "postepayposteit-domain": "[concat(parameters('afd_profile_id'), '/customDomains/domain-postepay-poste-it')]",
+        "postepayposteit-route": "[concat(variables('afd_profile_name'), '/', variables('afd_endpoint_name'), '/routing-postepay-poste-it')]",
+        "postepayposteit-origingroup": "[concat(parameters('afd_profile_id'), '/originGroups/origingroup-postepay-poste-it-AZ')]"
     },
     "resources": [
         {
@@ -46,19 +63,19 @@
         {
             "type": "Microsoft.Cdn/profiles/afdendpoints/routes",
             "apiVersion": "2024-02-01",
-            "name": "[concat(variables('afd_profile_name'), '/', variables('afd_endpoint_name'), '/routing-www-poste-it')]",
+            "name": "[variables('wwwposteit-route')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Cdn/profiles/afdendpoints', variables('afd_profile_name'), variables('afd_endpoint_name'))]"
+                "[parameters('afd_endpoint_id')]"
             ],
             "condition": "[parameters('wwwposteit-modify')]",
             "properties": {
                 "customDomains": [
                     {
-                        "id": "[concat(variables('afd_profile_id'), '/customDomains/domain-www-poste-it')]"
+                        "id": "[variables('wwwposteit-domain')]"
                     }
                 ],
                 "originGroup": {
-                    "id": "[concat(variables('afd_profile_id'), '/originGroups/origingroup-www-poste-it-AZ')]"
+                    "id": "[variables('wwwposteit-origingroup')]"
                 },
                 "ruleSets": "[if(equals(parameters('wwwposteit-ruleset'), '---'), json('[]'), array(createObject('id', parameters('wwwposteit-ruleset'))))]"
             }
@@ -66,19 +83,19 @@
         {
             "type": "Microsoft.Cdn/profiles/afdendpoints/routes",
             "apiVersion": "2024-02-01",
-            "name": "[concat(variables('afd_profile_name'), '/', variables('afd_endpoint_name'), '/routing-postepay-poste-it')]",
+            "name": "[variables('postepayposteit-route')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Cdn/profiles/afdendpoints', variables('afd_profile_name'), variables('afd_endpoint_name'))]"
+                "[parameters('afd_endpoint_id')]"
             ],
             "condition": "[parameters('postepayposteit-modify')]",
             "properties": {
                 "customDomains": [
                     {
-                        "id": "[concat(variables('afd_profile_id'), '/customDomains/domain-postepay-poste-it')]"
+                        "id": "[variables('postepayposteit-domain')]"
                     }
                 ],
                 "originGroup": {
-                    "id": "[concat(variables('afd_profile_id'), '/originGroups/origingroup-postepay-poste-it-AZ')]"
+                    "id": "[variables('postepayposteit-origingroup')]"
                 },
                 "ruleSets": "[if(equals(parameters('postepayposteit-ruleset'), '---'), json('[]'), array(createObject('id', parameters('postepayposteit-ruleset'))))]"
             }
