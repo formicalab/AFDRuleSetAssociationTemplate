@@ -28,6 +28,14 @@
                             }
                         },
                         {
+                            "name": "tbProfile",
+                            "type": "Microsoft.Common.TextBlock",
+                            "visible": true,
+                            "options": {
+                                "text": "[steps('basics').afdProfileSelector.id]"
+                            }
+                        },
+                        {
                             "name": "afdEndpointGet",
                             "type": "Microsoft.Solutions.ArmApiControl",
                             "request": {
@@ -47,6 +55,14 @@
                             "visible": true
                         },
                         {
+                            "name": "tbEndpoint",
+                            "type": "Microsoft.Common.TextBlock",
+                            "visible": true,
+                            "options": {
+                                "text": "[steps('basics').afdEndpointSelector]"
+                            }
+                        },
+                        {
                             "name": "afdRuleSetGet",
                             "type": "Microsoft.Solutions.ArmApiControl",
                             "request": {
@@ -63,6 +79,15 @@
                     "name": "associations",
                     "label": "Associations",
                     "elements": [
+                        {
+                            "name": "info",
+                            "type": "Microsoft.Common.InfoBox",
+                            "visible": true,
+                            "options": {
+                                "style": "Info",
+                                "text": "For each route, the current RuleSet is displayed. If you want to modify the RuleSet, check the box and select the new RuleSet from the dropdown list."
+                            }
+                        },
                         {
                             "name": "wwwposteitSection",
                             "type": "Microsoft.Common.Section",
