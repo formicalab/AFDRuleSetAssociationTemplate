@@ -91,7 +91,7 @@
                                 {
                                     "name": "wwwposteit-Checkbox",
                                     "type": "Microsoft.Common.CheckBox",
-                                    "label": "Modify:",
+                                    "label": "Modify RuleSet:",
                                     "constraints": {
                                         "required": false
                                     }
@@ -141,7 +141,7 @@
                                 {
                                     "name": "postepayposteit-Checkbox",
                                     "type": "Microsoft.Common.CheckBox",
-                                    "label": "Modify:",
+                                    "label": "Modify RuleSet:",
                                     "constraints": {
                                         "required": false
                                     }
