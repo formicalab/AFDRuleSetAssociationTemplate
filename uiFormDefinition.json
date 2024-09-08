@@ -122,7 +122,7 @@
                                     }
                                 },
                                 {
-                                    "name": "wwwposteit-routing-ruleset",
+                                    "name": "wwwposteit-ruleset",
                                     "type": "Microsoft.Common.DropDown",
                                     "label": "RuleSet to associate to the route:",
                                     "subLabel": "",
@@ -172,7 +172,7 @@
                                     }
                                 },
                                 {
-                                    "name": "postepayposteit-routing-ruleset",
+                                    "name": "postepayposteit-ruleset",
                                     "type": "Microsoft.Common.DropDown",
                                     "label": "RuleSet to associate to the route:",
                                     "subLabel": "",
@@ -195,9 +195,9 @@
         "outputs": {
             "parameters": {
                 "location": "[steps('basics').resourceScope.location.name]",
-                "wwwposteit-routing-ruleset": "[steps('associations').wwwposteitSection.wwwposteit-routing-ruleset]",
+                "wwwposteit-ruleset": "[steps('associations').wwwposteitSection.wwwposteit-ruleset]",
                 "wwwposteit-modify": "[steps('associations').wwwposteitSection.wwwposteit-Checkbox]",
-                "postepayposteit-routing-ruleset": "[steps('associations').postepayposteitSection.postepayposteit-routing-ruleset]",
+                "postepayposteit-ruleset": "[steps('associations').postepayposteitSection.postepayposteit-ruleset]",
                 "postepayposteit-modify": "[steps('associations').postepayposteitSection.postepayposteit-Checkbox]"
             },
             "kind": "ResourceGroup",

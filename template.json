@@ -9,7 +9,7 @@
                 "description": "True to modify the route, false to ignore it"
             }
         },
-        "wwwposteit-routing-ruleset": {
+        "wwwposteit-ruleset": {
             "type": "string",
             "defaultValue": "",
             "metadata": {
@@ -23,7 +23,7 @@
                 "description": "True to modify the route, false to ignore it"
             }
         },
-        "postepayposteit-routing-ruleset": {
+        "postepayposteit-ruleset": {
             "type": "string",
             "defaultValue": "",
             "metadata": {
@@ -60,7 +60,7 @@
                 "originGroup": {
                     "id": "[concat(variables('afd_profile_id'), '/originGroups/origingroup-www-poste-it-AZ')]"
                 },
-                "ruleSets": "[if(equals(parameters('wwwposteit-routing-ruleset'), '---'), json('[]'), array(createObject('id', parameters('wwwposteit-routing-ruleset'))))]"
+                "ruleSets": "[if(equals(parameters('wwwposteit-ruleset'), '---'), json('[]'), array(createObject('id', parameters('wwwposteit-ruleset'))))]"
             }
         },
         {
@@ -80,7 +80,7 @@
                 "originGroup": {
                     "id": "[concat(variables('afd_profile_id'), '/originGroups/origingroup-postepay-poste-it-AZ')]"
                 },
-                "ruleSets": "[if(equals(parameters('postepayposteit-routing-ruleset'), '---'), json('[]'), array(createObject('id', parameters('postepayposteit-routing-ruleset'))))]"
+                "ruleSets": "[if(equals(parameters('postepayposteit-ruleset'), '---'), json('[]'), array(createObject('id', parameters('postepayposteit-ruleset'))))]"
             }
         }
     ]
