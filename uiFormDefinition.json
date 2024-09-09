@@ -104,7 +104,7 @@
                                         "method": "GET",
                                         "path": "[concat(steps('basics').afdEndpointSelector, '/routes/routing-www-poste-it?api-version=2023-05-01')]",
                                         "transforms": {
-                                            "id": "[properties.ruleSets[0].id]",
+                                            "id": "properties.ruleSets[0].id",
 											"originGroup": "properties.originGroup.id"
                                         }
                                     }
@@ -142,7 +142,7 @@
                                     "type": "Microsoft.Common.DropDown",
                                     "label": "RuleSet to associate to the route:",
                                     "subLabel": "",
-                                    "defaultValue": "[if(empty(last(split(first(steps('associations').wwwposteitSection.Route.transformed.id),'/'))), '---', last(split(first(steps('associations').wwwposteitSection.Route.transformed.id),'/')))]",
+                                    "defaultValue": "[if(empty(last(split(steps('associations').wwwposteitSection.Route.transformed.id,'/'))), '---', last(split(steps('associations').wwwposteitSection.Route.transformed.id,'/')))]",
                                     "filter": true,
                                     "filterPlaceholder": "Filter items ...",
                                     "constraints": {
@@ -167,7 +167,7 @@
                                         "method": "GET",
                                         "path": "[concat(steps('basics').afdEndpointSelector, '/routes/routing-postepay-poste-it?api-version=2023-05-01')]",
                                         "transforms": {
-                                            "id": "[properties.ruleSets[0].id]",
+                                            "id": "properties.ruleSets[0].id",
 											"originGroup": "properties.originGroup.id"
                                         }
                                     }
@@ -189,7 +189,7 @@
                                     "type": "Microsoft.Common.TextBlock",
                                     "visible": false,
                                     "options": {
-                                        "text": "[if(empty(last(split(first(steps('associations').postepayposteitSection.Route.transformed.id),'/'))), '---', last(split(first(steps('associations').postepayposteitSection.Route.transformed.id),'/')))]"
+                                        "text": "[if(empty(last(split(steps('associations').postepayposteitSection.Route.transformed.id,'/'))), '---', last(split(steps('associations').postepayposteitSection.Route.transformed.id,'/')))]"
                                     }
                                 },
                                 {
