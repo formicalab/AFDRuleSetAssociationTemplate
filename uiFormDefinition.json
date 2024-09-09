@@ -205,7 +205,7 @@
                                     "type": "Microsoft.Common.DropDown",
                                     "label": "RuleSet to associate to the route:",
                                     "subLabel": "",
-                                    "defaultValue": "[if(empty(last(split(first(steps('associations').postepayposteitSection.Route.transformed.id),'/'))), '---', last(split(first(steps('associations').postepayposteitSection.Route.transformed.id),'/')))]",
+                                    "defaultValue": "[if(empty(last(split(steps('associations').postepayposteitSection.Route.transformed.id,'/'))), '---', last(split(steps('associations').postepayposteitSection.Route.transformed.id,'/')))]",
                                     "filter": true,
                                     "filterPlaceholder": "Filter items ...",
                                     "constraints": {
