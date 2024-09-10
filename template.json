@@ -113,7 +113,7 @@
                     }
                 ],
                 "originGroup": {
-                    "id": "[variables('postepayposteit-origingroup')]"
+                    "id": "[variables('wwwposteit-origingroup')]"
                 },
                 "ruleSets": "[if(equals(parameters('associationType'), 'All'), if(equals(parameters('all-ruleset'), '---'), json('[]'), array(createObject('id', parameters('all-ruleset')))), if(equals(parameters('postepayposteit-ruleset'), '---'), json('[]'), array(createObject('id', parameters('postepayposteit-ruleset')))))]"
             }
