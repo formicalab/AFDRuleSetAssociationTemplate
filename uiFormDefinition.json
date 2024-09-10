@@ -39,7 +39,7 @@
                             }
                         },
                         {
-                            "name": "afdEndpointGet",
+                            "name": "afdEndpoint",
                             "type": "Microsoft.Solutions.ArmApiControl",
                             "request": {
                                 "method": "GET",
@@ -52,7 +52,7 @@
                             "label": "Endpoint",
                             "filter": true,
                             "constraints": {
-                                "allowedValues": "[map(steps('basics').afdEndpointGet.value, (item) => parse(concat('{\"label\":\"', item.name, '\",\"value\":\"', item.id, '\"}')))]",
+                                "allowedValues": "[map(steps('basics').afdEndpoint.value, (item) => parse(concat('{\"label\":\"', item.name, '\",\"value\":\"', item.id, '\"}')))]",
                                 "required": true
                             },
                             "visible": true
@@ -66,7 +66,7 @@
                             }
                         },
                         {
-                            "name": "afdRuleSetGet",
+                            "name": "afdRuleSets",
                             "type": "Microsoft.Solutions.ArmApiControl",
                             "request": {
                                 "method": "GET",
@@ -126,7 +126,7 @@
                                     "filterPlaceholder": "Filter items ...",
                                     "constraints": {
                                         "required": false,
-                                        "allowedValues": "[steps('basics').afdRuleSetGet.transformed.list]"
+                                        "allowedValues": "[steps('basics').afdRuleSets.transformed.list]"
                                     },
                                     "infoMessages": [],
                                     "visible": "[equals(steps('associations').sectionAssociationType.ogAssociationType, 'All')]"
@@ -189,7 +189,7 @@
                                     "filterPlaceholder": "Filter items ...",
                                     "constraints": {
                                         "required": false,
-                                        "allowedValues": "[steps('basics').afdRuleSetGet.transformed.list]"
+                                        "allowedValues": "[steps('basics').afdRuleSets.transformed.list]"
                                     },
                                     "infoMessages": [],
                                     "visible": true
@@ -252,7 +252,7 @@
                                     "filterPlaceholder": "Filter items ...",
                                     "constraints": {
                                         "required": false,
-                                        "allowedValues": "[steps('basics').afdRuleSetGet.transformed.list]"
+                                        "allowedValues": "[steps('basics').afdRuleSets.transformed.list]"
                                     },
                                     "infoMessages": [],
                                     "visible": true
