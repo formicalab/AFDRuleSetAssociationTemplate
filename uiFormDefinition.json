@@ -269,7 +269,7 @@
                 "afd_profile_id": "[steps('basics').afdProfileSelector.id]",
                 "afd_endpoint_id": "[steps('basics').afdEndpointSelector]",
                 "associationType": "[steps('associations').sectionAssociationType.ogAssociationType]",
-                "all-ruleset": "[steps('associations').sectionAssociationType.ddAllRuleset]",
+                "all_ruleset_id": "[steps('associations').sectionAssociationType.ddAllRuleset]",
                 "wwwposteit-ruleset": "[steps('associations').wwwposteitSection.wwwposteit-ruleset]",
                 "wwwposteit-modify": "[steps('associations').wwwposteitSection.wwwposteit-Checkbox]",
                 "postepayposteit-ruleset": "[steps('associations').postepayposteitSection.postepayposteit-ruleset]",

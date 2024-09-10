@@ -11,7 +11,7 @@
         "associationType": {
             "value": "All"
         },
-        "all-ruleset": {
+        "all_ruleset_id": {
             "value": "/subscriptions/4a570962-701a-475e-bf5b-8dc76ec748ff/resourceGroups/rg-afd-itn-001/providers/Microsoft.Cdn/profiles/afd-itn-001/ruleSets/Azure10Roma90"
         },
         "wwwposteit-ruleset": {
