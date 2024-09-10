@@ -8,6 +8,12 @@
         "afd_endpoint_id": {
             "value": "/subscriptions/4a570962-701a-475e-bf5b-8dc76ec748ff/resourcegroups/rg-afd-itn-001/providers/Microsoft.Cdn/profiles/afd-itn-001/afdendpoints/endpoint-apps"
         },
+        "associationType": {
+            "value": "All"
+        },
+        "all-ruleset": {
+            "value": "---"
+        },
         "wwwposteit-ruleset": {
             "value": "---"
         },
