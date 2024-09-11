@@ -64,12 +64,12 @@
     "variables": {
         "afd_profile_name": "[last(split(parameters('afd_profile_id'), '/'))]",
         "afd_endpoint_name": "[last(split(parameters('afd_endpoint_id'), '/'))]",
-        "wwwposteit-domain": "[concat(parameters('afd_profile_id'), '/customDomains/domain-www-poste-it')]",
-        "wwwposteit-route": "[concat(variables('afd_profile_name'), '/', variables('afd_endpoint_name'), '/routing-www-poste-it')]",
-        "wwwposteit-origingroup": "[concat(parameters('afd_profile_id'), '/originGroups/origingroup-www-poste-it-AZ')]",
-        "postepayposteit-domain": "[concat(parameters('afd_profile_id'), '/customDomains/domain-postepay-poste-it')]",
-        "postepayposteit-route": "[concat(variables('afd_profile_name'), '/', variables('afd_endpoint_name'), '/routing-postepay-poste-it')]",
-        "postepayposteit-origingroup": "[concat(parameters('afd_profile_id'), '/originGroups/origingroup-postepay-poste-it-AZ')]"
+        "wwwposteit_route_name": "routing-www-poste-it",
+        "wwwposteit_domain_id": "[concat(parameters('afd_profile_id'), '/customDomains/domain-www-poste-it')]",
+        "wwwposteit_origingroup_id": "[concat(parameters('afd_profile_id'), '/originGroups/origingroup-www-poste-it-AZ')]",
+        "postepayposteit_route_name": "routing-postepay-poste-it",
+        "postepayposteit_domain_id": "[concat(parameters('afd_profile_id'), '/customDomains/domain-postepay-poste-it')]",
+        "postepayposteit_origingroup_id": "[concat(parameters('afd_profile_id'), '/originGroups/origingroup-postepay-poste-it-AZ')]"
     },
     "resources": [
         {
@@ -81,7 +81,7 @@
         {
             "type": "Microsoft.Cdn/profiles/afdendpoints/routes",
             "apiVersion": "2024-02-01",
-            "name": "[variables('wwwposteit-route')]",
+            "name": "[concat(variables('afd_profile_name'), '/', variables('afd_endpoint_name'), '/', variables('wwwposteit_route_name'))]",
             "dependsOn": [
                 "[parameters('afd_endpoint_id')]"
             ],
@@ -89,11 +89,11 @@
             "properties": {
                 "customDomains": [
                     {
-                        "id": "[variables('wwwposteit-domain')]"
+                        "id": "[variables('wwwposteit_domain_id')]"
                     }
                 ],
                 "originGroup": {
-                    "id": "[variables('wwwposteit-origingroup')]"
+                    "id": "[variables('wwwposteit_origingroup_id')]"
                 },
                 "ruleSets": "[if(equals(parameters('associationType'), 'All'), if(equals(parameters('all_ruleset_id'), '---'), json('[]'), array(createObject('id', parameters('all_ruleset_id')))), if(equals(parameters('wwwposteit-ruleset'), '---'), json('[]'), array(createObject('id', parameters('wwwposteit-ruleset')))))]"
             }
@@ -101,7 +101,7 @@
         {
             "type": "Microsoft.Cdn/profiles/afdendpoints/routes",
             "apiVersion": "2024-02-01",
-            "name": "[variables('postepayposteit-route')]",
+            "name": "[concat(variables('afd_profile_name'), '/', variables('afd_endpoint_name'), '/', variables('postepayposteit_route_name'))]",
             "dependsOn": [
                 "[parameters('afd_endpoint_id')]"
             ],
@@ -109,11 +109,11 @@
             "properties": {
                 "customDomains": [
                     {
-                        "id": "[variables('postepayposteit-domain')]"
+                        "id": "[variables('postepayposteit_domain_id')]"
                     }
                 ],
                 "originGroup": {
-                    "id": "[variables('wwwposteit-origingroup')]"
+                    "id": "[variables('postepayposteit_origingroup_id')]"
                 },
                 "ruleSets": "[if(equals(parameters('associationType'), 'All'), if(equals(parameters('all_ruleset_id'), '---'), json('[]'), array(createObject('id', parameters('all_ruleset_id')))), if(equals(parameters('postepayposteit-ruleset'), '---'), json('[]'), array(createObject('id', parameters('postepayposteit-ruleset')))))]"
             }
