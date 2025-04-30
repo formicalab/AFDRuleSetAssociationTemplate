@@ -83,7 +83,7 @@
             "apiVersion": "2024-02-01",
             "name": "[concat(variables('afd_profile_name'), '/', variables('afd_endpoint_name'), '/', variables('wwwposteit_route_name'))]",
             "dependsOn": [
-                "[parameters('afd_endpoint_id')]"
+                "[resourceId('Microsoft.Cdn/profiles/afdendpoints', variables('afd_profile_name'), variables('afd_endpoint_name'))]"
             ],
             "condition": "[or(equals(parameters('associationType'), 'All'), parameters('wwwposteit-modify'))]",
             "properties": {
