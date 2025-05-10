@@ -14,108 +14,82 @@
                 "description": "The ID of the Azure Front Door endpoint"
             }
         },
-        "associationType": {
-            "type": "string",
-            "defaultValue": "All",
-            "metadata": {
-                "description": "The type of association",
-                "allowedValues": [
-                    "All",
-                    "Individually"
-                ]
-            }
-        },
-        "all_ruleset_id": {
+        "selected_ruleset_id": {
             "type": "string",
             "defaultValue": "---",
             "metadata": {
                 "description": "The ID of the ruleset to apply to all routes if associationType is All"
             }
         },
-        "wwwposteit-modify": {
-            "type": "bool",
-            "defaultValue": false,
+        "selected_routes": {
+            "type": "array",
             "metadata": {
-                "description": "True to modify the route, false to ignore it"
+                "description": "The list of routes to apply the ruleset to"
             }
         },
-        "wwwposteit-ruleset": {
-            "type": "string",
-            "defaultValue": "---",
+        "route_originGroups": {
+            "type": "array",
             "metadata": {
-                "description": "The ruleset to apply to the route"
+                "description": "The list of origin groups for the routes"
             }
         },
-        "postepayposteit-modify": {
-            "type": "bool",
-            "defaultValue": false,
+        "route_customDomains": {
+            "type": "array",
             "metadata": {
-                "description": "True to modify the route, false to ignore it"
+                "description": "The list of custom domains for the routes"
             }
         },
-        "postepayposteit-ruleset": {
-            "type": "string",
-            "defaultValue": "---",
+        "route_patterns": { "type": "array" },
+        "route_protocols": { "type": "array" },
+        "route_httpsRedirect": { "type": "array" },
+        "route_forwardingProto": { "type": "array" },
+        "route_enabledState": { "type": "array" },
+        "route_cacheConfig": { "type": "array" },
+        "all_route_ids": {
+            "type": "array",
             "metadata": {
-                "description": "The ruleset to apply to the route"
+                "description": "IDs of all routes (index aligns with originGroups / customDomains)"
             }
         }
     },
     "variables": {
         "afd_profile_name": "[last(split(parameters('afd_profile_id'), '/'))]",
-        "afd_endpoint_name": "[last(split(parameters('afd_endpoint_id'), '/'))]",
-        "wwwposteit_route_name": "routing-www-poste-it",
-        "wwwposteit_domain_id": "[concat(parameters('afd_profile_id'), '/customDomains/domain-www-poste-it')]",
-        "wwwposteit_origingroup_id": "[concat(parameters('afd_profile_id'), '/originGroups/origingroup-www-poste-it-AZ')]",
-        "postepayposteit_route_name": "routing-postepay-poste-it",
-        "postepayposteit_domain_id": "[concat(parameters('afd_profile_id'), '/customDomains/domain-postepay-poste-it')]",
-        "postepayposteit_origingroup_id": "[concat(parameters('afd_profile_id'), '/originGroups/origingroup-postepay-poste-it-AZ')]"
+        "afd_endpoint_name": "[last(split(parameters('afd_endpoint_id'), '/'))]"
     },
     "resources": [
         {
             "type": "Microsoft.Cdn/profiles/afdendpoints",
-            "apiVersion": "2024-02-01",
+            "apiVersion": "2024-09-01",
             "name": "[concat(variables('afd_profile_name'), '/', variables('afd_endpoint_name'))]",
             "location": "global"
         },
         {
             "type": "Microsoft.Cdn/profiles/afdendpoints/routes",
-            "apiVersion": "2024-02-01",
-            "name": "[concat(variables('afd_profile_name'), '/', variables('afd_endpoint_name'), '/', variables('wwwposteit_route_name'))]",
+            "apiVersion": "2024-09-01",
+            "name": "[concat(variables('afd_profile_name'), '/', variables('afd_endpoint_name'), '/', last(split(parameters('selected_routes')[copyIndex()], '/')))]",
+            "copy": {
+                "name": "routeAssociationLoop",
+                "count": "[length(parameters('selected_routes'))]"
+            },
             "dependsOn": [
                 "[resourceId('Microsoft.Cdn/profiles/afdendpoints', variables('afd_profile_name'), variables('afd_endpoint_name'))]"
             ],
-            "condition": "[or(equals(parameters('associationType'), 'All'), parameters('wwwposteit-modify'))]",
+
             "properties": {
-                "customDomains": [
-                    {
-                        "id": "[variables('wwwposteit_domain_id')]"
-                    }
-                ],
                 "originGroup": {
-                    "id": "[variables('wwwposteit_origingroup_id')]"
+                    "id": "[parameters('route_originGroups')[indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()])]]"
                 },
-                "ruleSets": "[if(equals(parameters('associationType'), 'All'), if(equals(parameters('all_ruleset_id'), '---'), json('[]'), array(createObject('id', parameters('all_ruleset_id')))), if(equals(parameters('wwwposteit-ruleset'), '---'), json('[]'), array(createObject('id', parameters('wwwposteit-ruleset')))))]"
-            }
-        },
-        {
-            "type": "Microsoft.Cdn/profiles/afdendpoints/routes",
-            "apiVersion": "2024-02-01",
-            "name": "[concat(variables('afd_profile_name'), '/', variables('afd_endpoint_name'), '/', variables('postepayposteit_route_name'))]",
-            "dependsOn": [
-                "[parameters('afd_endpoint_id')]"
-            ],
-            "condition": "[or(equals(parameters('associationType'), 'All'), parameters('postepayposteit-modify'))]",
-            "properties": {
-                "customDomains": [
+                "customDomains": "[parameters('route_customDomains')[ max(indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()]), 0) ]]",
+                "patternsToMatch": "[parameters('route_patterns')[ max(indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()]), 0) ]]",
+                "supportedProtocols": "[parameters('route_protocols')[     max(indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()]), 0) ]]",
+                "httpsRedirect": "[parameters('route_httpsRedirect')[ max(indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()]), 0) ]]",
+                "forwardingProtocol": "[parameters('route_forwardingProto')[max(indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()]), 0) ]]",
+                "enabledState": "[parameters('route_enabledState')[  max(indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()]), 0) ]]",
+                "ruleSets": [
                     {
-                        "id": "[variables('postepayposteit_domain_id')]"
+                        "id": "[parameters('selected_ruleset_id')]"
                     }
-                ],
-                "originGroup": {
-                    "id": "[variables('postepayposteit_origingroup_id')]"
-                },
-                "ruleSets": "[if(equals(parameters('associationType'), 'All'), if(equals(parameters('all_ruleset_id'), '---'), json('[]'), array(createObject('id', parameters('all_ruleset_id')))), if(equals(parameters('postepayposteit-ruleset'), '---'), json('[]'), array(createObject('id', parameters('postepayposteit-ruleset')))))]"
+                ]
             }
         }
     ]
