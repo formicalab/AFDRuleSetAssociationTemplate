@@ -15,53 +15,63 @@
                             "visible": true,
                             "options": {
                                 "icon": "Info",
-                                "text": "[concat('Use this template to modify RuleSet associations for FrontDoor profile <b>',steps('basics').afdProfile.name, '</b>, endpoint <b>', steps('basics').afdEndpoint.name, '</b><p>Leave the following fields unchanged and confirm just the subscription and the resource group containing the FrontDoor profile:')]"
+                                "text": "[concat('Use this template to modify RuleSet associations for <ul><li>FrontDoor profile: <b>', steps('basics').afdProfileSelector.name, '</b> (sku: ', steps('basics').afdProfile.sku.name, ')</li><li>Endpoint: <b>', steps('basics').afdEndpoint.name, '</b> (hostName: ', steps('basics').afdEndpoint.properties.hostName, ')</li><li>Routes: <b>', string(length(steps('basics').afdRoutes.transformed.routeIds)),  '</b></li><li>Available rulesets: <b>', string(length(steps('basics').afdRuleSets.value))  ,'</b></li></ul>')]"
                             }
                         },
                         {
-                            "name": "tbSubscriptionName",
-                            "type": "Microsoft.Common.TextBox",
-                            "label": "Subscription",
-                            "defaultValue": "Flaz-2"
+                            "name": "resourceScope",
+                            "type": "Microsoft.Common.ResourceScope",
+                            "instanceDetailsLabel": "Specify the subscription and resource group of the Front Door profile",
+                            "globalResource": "true",
+                            "resourceGroup": {
+                                "allowExisting": true
+                            }
                         },
                         {
-                            "name": "tbSubscriptionId",
-                            "type": "Microsoft.Common.TextBox",
-                            "label": "Subscription ID",
-                            "defaultValue": "c4e6c176-bf9c-4e8c-87b2-ebdceea7085f"
-                        },
-                        {
-                            "name": "tbResourceGroup",
-                            "type": "Microsoft.Common.TextBox",
-                            "label": "Resource Group",
-                            "defaultValue": "rg-afd-itn-001"
-                        },
-                        {
-                            "name": "tbAfdProfile",
-                            "type": "Microsoft.Common.TextBox",
-                            "label": "Front Door Profile",
-                            "defaultValue": "afd-itn-001"
-                        },
-                        {
-                            "name": "tbAfdEndpoint",
-                            "type": "Microsoft.Common.TextBox",
-                            "label": "Front Door Endpoint",
-                            "defaultValue": "endpoint-apps"
+                            "name": "afdProfileSelector",
+                            "type": "Microsoft.Solutions.ResourceSelector",
+                            "label": "Select the Front Door (Std/Premium) Profile from above subscription:",
+                            "resourceType": "Microsoft.Cdn/profiles",
+                            "scope": {
+                                "subscriptionId": "[steps('basics').resourceScope.subscription.subscriptionId]"
+                            },
+                            "constraints": {
+                                "required": true
+                            }
                         },
                         {
                             "name": "afdProfile",
                             "type": "Microsoft.Solutions.ArmApiControl",
                             "request": {
                                 "method": "GET",
-                                "path": "[concat('/subscriptions/', steps('basics').tbSubscriptionId, '/resourceGroups/', steps('basics').tbResourceGroup, '/providers/Microsoft.Cdn/profiles/', steps('basics').tbAfdProfile, '?api-version=2025-04-15')]"
+                                "path": "[concat(steps('basics').afdProfileSelector.id, '?api-version=2025-04-15')]"
                             }
+                        },
+                        {
+                            "name": "afdEndpoints",
+                            "type": "Microsoft.Solutions.ArmApiControl",
+                            "request": {
+                                "method": "GET",
+                                "path": "[concat(steps('basics').afdProfileSelector.id, '/afdEndpoints?api-version=2025-04-15')]"
+                            }
+                        },
+                        {
+                            "name": "afdEndpointSelector",
+                            "type": "Microsoft.Common.DropDown",
+                            "label": "Endpoint",
+                            "filter": true,
+                            "constraints": {
+                                "allowedValues": "[map(steps('basics').afdEndpoints.value, (item) => parse(concat('{\"label\":\"', item.name, '\",\"value\":\"', item.id, '\"}')))]",
+                                "required": true
+                            },
+                            "visible": true
                         },
                         {
                             "name": "afdEndpoint",
                             "type": "Microsoft.Solutions.ArmApiControl",
                             "request": {
                                 "method": "GET",
-                                "path": "[concat(steps('basics').afdProfile.id, '/afdEndpoints/', steps('basics').tbAfdEndpoint, '?api-version=2025-04-15')]"
+                                "path": "[concat(steps('basics').afdEndpointSelector, '?api-version=2025-04-15')]"
                             }
                         },
                         {
@@ -94,33 +104,6 @@
                                     "routeIds": "[value|[*].id][]"
                                 }
                             }
-                        },
-                        {
-                            "name": "resourceScope",
-                            "type": "Microsoft.Common.ResourceScope",
-                            "instanceDetailsLabel": "Specify the same subscription and resource group as the Front Door profile",
-                            "globalResource": "true",
-                            "subscription": {
-                                "constraints": {
-                                    "validations": [
-                                        {
-                                            "isValid": "[equals(steps('basics').resourceScope.subscription.subscriptionId,  steps('basics').tbSubscriptionId)]",
-                                            "message": "[concat('Use subscription ',  steps('basics').tbSubscriptionName)]"
-                                        }
-                                    ]
-                                }
-                            },
-                            "resourceGroup": {
-                                "constraints": {
-                                    "validations": [
-                                        {
-                                            "isValid": "[equals(steps('basics').resourceScope.resourceGroup.name,  steps('basics').tbResourceGroup)]",
-                                            "message": "[concat('Use resource group ',  steps('basics').tbResourceGroup)]"
-                                        }
-                                    ]
-                                },
-                                "allowExisting": true
-                            }
                         }
                     ]
                 },
@@ -150,6 +133,7 @@
                             "filter": true,
                             "filterPlaceholder": "Filter items ...",
                             "multiLine": true,
+                            "defaultDescription": "No ruleset associated",
                             "constraints": {
                                 "allowedValues": "[steps('basics').afdRoutes.transformed.routeList]",
                                 "required": true
