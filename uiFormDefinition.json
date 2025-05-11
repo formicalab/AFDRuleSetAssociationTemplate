@@ -90,7 +90,7 @@
                                     "httpsRedirect": "[value|[*].properties.httpsRedirect][]",
                                     "forwardingProtocol": "[value|[*].properties.forwardingProtocol][]",
                                     "enabledState": "[value|[*].properties.enabledState][]",
-                                    "cacheConfiguration": "[value|[*].properties.cacheConfiguration][]",
+                                    "cacheConfiguration": "value|[*].{cacheConfiguration: properties.cacheConfiguration}",
                                     "routeIds": "[value|[*].id][]"
                                 }
                             }

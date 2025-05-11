@@ -59,13 +59,13 @@
     "resources": [
         {
             "type": "Microsoft.Cdn/profiles/afdendpoints",
-            "apiVersion": "2024-09-01",
+            "apiVersion": "2025-04-15",
             "name": "[concat(variables('afd_profile_name'), '/', variables('afd_endpoint_name'))]",
             "location": "global"
         },
         {
             "type": "Microsoft.Cdn/profiles/afdendpoints/routes",
-            "apiVersion": "2024-09-01",
+            "apiVersion": "2025-04-15",
             "name": "[concat(variables('afd_profile_name'), '/', variables('afd_endpoint_name'), '/', last(split(parameters('selected_routes')[copyIndex()], '/')))]",
             "copy": {
                 "name": "routeAssociationLoop",
@@ -85,7 +85,7 @@
                 "httpsRedirect": "[parameters('route_httpsRedirect')[ indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()]) ]]",
                 "forwardingProtocol": "[parameters('route_forwardingProto')[indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()]) ]]",
                 "enabledState": "[parameters('route_enabledState')[  indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()]) ]]",
-
+                "cacheConfiguration": "[parameters('route_cacheConfig')[indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()])].cacheConfiguration]",
                 "ruleSets": "[if(equals(parameters('selected_ruleset_id'), '---'), json('[]'), array(createObject('id', parameters('selected_ruleset_id'))))]"
             }
         }
