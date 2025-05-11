@@ -85,11 +85,8 @@
                 "httpsRedirect": "[parameters('route_httpsRedirect')[ indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()]) ]]",
                 "forwardingProtocol": "[parameters('route_forwardingProto')[indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()]) ]]",
                 "enabledState": "[parameters('route_enabledState')[  indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()]) ]]",
-                "ruleSets": [
-                    {
-                        "id": "[parameters('selected_ruleset_id')]"
-                    }
-                ]
+
+                "ruleSets": "[if(equals(parameters('selected_ruleset_id'), '---'), json('[]'), array(createObject('id', parameters('selected_ruleset_id'))))]"
             }
         }
     ]
