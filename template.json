@@ -79,12 +79,12 @@
                 "originGroup": {
                     "id": "[parameters('route_originGroups')[indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()])]]"
                 },
-                "customDomains": "[parameters('route_customDomains')[ max(indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()]), 0) ]]",
-                "patternsToMatch": "[parameters('route_patterns')[ max(indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()]), 0) ]]",
-                "supportedProtocols": "[parameters('route_protocols')[     max(indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()]), 0) ]]",
-                "httpsRedirect": "[parameters('route_httpsRedirect')[ max(indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()]), 0) ]]",
-                "forwardingProtocol": "[parameters('route_forwardingProto')[max(indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()]), 0) ]]",
-                "enabledState": "[parameters('route_enabledState')[  max(indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()]), 0) ]]",
+                "customDomains": "[parameters('route_customDomains')[ indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()])  ]]",
+                "patternsToMatch": "[parameters('route_patterns')[ indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()]) ]]",
+                "supportedProtocols": "[parameters('route_protocols')[     indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()]) ]]",
+                "httpsRedirect": "[parameters('route_httpsRedirect')[ indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()]) ]]",
+                "forwardingProtocol": "[parameters('route_forwardingProto')[indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()]) ]]",
+                "enabledState": "[parameters('route_enabledState')[  indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()]) ]]",
                 "ruleSets": [
                     {
                         "id": "[parameters('selected_ruleset_id')]"
