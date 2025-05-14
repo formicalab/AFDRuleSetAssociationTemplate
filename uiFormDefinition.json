@@ -10,10 +10,19 @@
                     "label": "Basics",
                     "elements": [
                         {
+                            "name": "introTextBlock",
+                            "type": "Microsoft.Common.InfoBox",
+                            "visible": true,
+                            "options": {
+                                "icon": "Info",
+                                "text": "[concat('Use this template to modify RuleSet associations for <ul><li>FrontDoor profile: <b>', steps('basics').afdProfileSelector.name, '</b> (sku: ', steps('basics').afdProfile.sku.name, ')</li><li>Endpoint: <b>', steps('basics').afdEndpoint.name, '</b> (hostName: ', steps('basics').afdEndpoint.properties.hostName, ')</li><li>Routes: <b>', string(length(steps('basics').afdRoutes.transformed.routeIds)),  '</b></li><li>Available rulesets: <b>', string(length(steps('basics').afdRuleSets.value))  ,'</b></li></ul>')]"
+                            }
+                        },
+                        {
                             "name": "resourceScope",
                             "type": "Microsoft.Common.ResourceScope",
+                            "instanceDetailsLabel": "Specify the subscription and resource group of the Front Door profile",
                             "globalResource": "true",
-                            "instanceDetailsLabel": "FrontDoor details",
                             "resourceGroup": {
                                 "allowExisting": true
                             }
@@ -21,7 +30,7 @@
                         {
                             "name": "afdProfileSelector",
                             "type": "Microsoft.Solutions.ResourceSelector",
-                            "label": "Select the Azure Front Door Profile:",
+                            "label": "Select the Front Door (Std/Premium) Profile from above subscription:",
                             "resourceType": "Microsoft.Cdn/profiles",
                             "scope": {
                                 "subscriptionId": "[steps('basics').resourceScope.subscription.subscriptionId]"
@@ -31,19 +40,19 @@
                             }
                         },
                         {
-                            "name": "tbProfile",
-                            "type": "Microsoft.Common.TextBlock",
-                            "visible": true,
-                            "options": {
-                                "text": "[steps('basics').afdProfileSelector.id]"
-                            }
-                        },
-                        {
-                            "name": "afdEndpoint",
+                            "name": "afdProfile",
                             "type": "Microsoft.Solutions.ArmApiControl",
                             "request": {
                                 "method": "GET",
-                                "path": "[concat(steps('basics').afdProfileSelector.id, '/afdEndpoints?api-version=2023-05-01')]"
+                                "path": "[concat(steps('basics').afdProfileSelector.id, '?api-version=2025-04-15')]"
+                            }
+                        },
+                        {
+                            "name": "afdEndpoints",
+                            "type": "Microsoft.Solutions.ArmApiControl",
+                            "request": {
+                                "method": "GET",
+                                "path": "[concat(steps('basics').afdProfileSelector.id, '/afdEndpoints?api-version=2025-04-15')]"
                             }
                         },
                         {
@@ -52,17 +61,17 @@
                             "label": "Endpoint",
                             "filter": true,
                             "constraints": {
-                                "allowedValues": "[map(steps('basics').afdEndpoint.value, (item) => parse(concat('{\"label\":\"', item.name, '\",\"value\":\"', item.id, '\"}')))]",
+                                "allowedValues": "[map(steps('basics').afdEndpoints.value, (item) => parse(concat('{\"label\":\"', item.name, '\",\"value\":\"', item.id, '\"}')))]",
                                 "required": true
                             },
                             "visible": true
                         },
                         {
-                            "name": "tbEndpoint",
-                            "type": "Microsoft.Common.TextBlock",
-                            "visible": true,
-                            "options": {
-                                "text": "[steps('basics').afdEndpointSelector]"
+                            "name": "afdEndpoint",
+                            "type": "Microsoft.Solutions.ArmApiControl",
+                            "request": {
+                                "method": "GET",
+                                "path": "[concat(steps('basics').afdEndpointSelector, '?api-version=2025-04-15')]"
                             }
                         },
                         {
@@ -70,9 +79,29 @@
                             "type": "Microsoft.Solutions.ArmApiControl",
                             "request": {
                                 "method": "GET",
-                                "path": "[concat(steps('basics').afdProfileSelector.id, '/ruleSets?api-version=2023-05-01')]",
+                                "path": "[concat(steps('basics').afdProfile.id, '/ruleSets?api-version=2025-04-15')]",
                                 "transforms": {
                                     "list": "[value|[*].{label:name, value:id},[{label: '---', value: '---'}]][]"
+                                }
+                            }
+                        },
+                        {
+                            "name": "afdRoutes",
+                            "type": "Microsoft.Solutions.ArmApiControl",
+                            "request": {
+                                "method": "GET",
+                                "path": "[concat(steps('basics').afdEndpoint.id, '/routes?api-version=2025-04-15')]",
+                                "transforms": {
+                                    "routeList": "[value|[*].{label:name, value:id, description: properties.ruleSets[0].id}][]",
+                                    "originGroups": "[value|[*].properties.originGroup.id][]",
+                                    "customDomains": "[value|[*].properties.customDomains][]",
+                                    "patterns": "[value|[*].properties.patternsToMatch][]",
+                                    "protocols": "[value|[*].properties.supportedProtocols][]",
+                                    "httpsRedirect": "[value|[*].properties.httpsRedirect][]",
+                                    "forwardingProtocol": "[value|[*].properties.forwardingProtocol][]",
+                                    "enabledState": "[value|[*].properties.enabledState][]",
+                                    "cacheConfiguration": "value|[*].{cacheConfiguration: properties.cacheConfiguration}",
+                                    "routeIds": "[value|[*].id][]"
                                 }
                             }
                         }
@@ -83,181 +112,33 @@
                     "label": "Associations",
                     "elements": [
                         {
-                            "name": "sectionAssociationType",
-                            "type": "Microsoft.Common.Section",
-                            "label": "Association Type",
-                            "elements": [
-                                {
-                                    "name": "info",
-                                    "type": "Microsoft.Common.InfoBox",
-                                    "visible": true,
-                                    "options": {
-                                        "style": "Info",
-                                        "text": "Choose the association type:<ol><li>Select a RuleSet and apply it to <b>all</b> routes, or:</li><li><b>For each route</b>, mark the checkbox if you want to change the current RuleSet (shown in each dropdown list) and choose a new one</li></ol>"
-                                    }
-                                },
-                                {
-                                    "name": "ogAssociationType",
-                                    "type": "Microsoft.Common.OptionsGroup",
-                                    "label": "Apply the same RuleSet to all routes or decide individually:",
-                                    "defaultValue": "All",
-                                    "toolTip": "",
-                                    "constraints": {
-                                        "allowedValues": [
-                                            {
-                                                "label": "All",
-                                                "value": "All"
-                                            },
-                                            {
-                                                "label": "Individually",
-                                                "value": "Individually"
-                                            }
-                                        ],
-                                        "required": true
-                                    },
-                                    "visible": true
-                                },
-                                {
-                                    "name": "ddAllRuleset",
-                                    "type": "Microsoft.Common.DropDown",
-                                    "label": "RuleSet to associate to all the routes:",
-                                    "subLabel": "",
-                                    "filter": true,
-                                    "filterPlaceholder": "Filter items ...",
-                                    "constraints": {
-                                        "required": false,
-                                        "allowedValues": "[steps('basics').afdRuleSets.transformed.list]"
-                                    },
-                                    "infoMessages": [],
-                                    "visible": "[equals(steps('associations').sectionAssociationType.ogAssociationType, 'All')]"
-                                }
-                            ]
+                            "name": "ddRuleset",
+                            "type": "Microsoft.Common.DropDown",
+                            "label": "RuleSet to associate:",
+                            "subLabel": "This ruleset will be associated to all the selected routes",
+                            "filter": true,
+                            "filterPlaceholder": "Filter items ...",
+                            "constraints": {
+                                "required": true,
+                                "allowedValues": "[steps('basics').afdRuleSets.transformed.list]"
+                            },
+                            "infoMessages": []
                         },
                         {
-                            "name": "wwwposteitSection",
-                            "type": "Microsoft.Common.Section",
-                            "label": "www.poste.it",
-                            "visible": "[equals(steps('associations').sectionAssociationType.ogAssociationType, 'Individually')]",
-                            "elements": [
-                                {
-                                    "name": "Route",
-                                    "type": "Microsoft.Solutions.ArmApiControl",
-                                    "request": {
-                                        "method": "GET",
-                                        "path": "[concat(steps('basics').afdEndpointSelector, '/routes/routing-www-poste-it?api-version=2023-05-01')]",
-                                        "transforms": {
-                                            "id": "properties.ruleSets[0].id",
-                                            "originGroup": "properties.originGroup.id"
-                                        }
-                                    }
-                                },
-                                {
-                                    "name": "OriginGroup",
-                                    "type": "Microsoft.Common.TextBlock",
-                                    "visible": true,
-                                    "options": {
-                                        "text": "Default Origin Group:",
-                                        "link": {
-                                            "label": "[last(split(steps('associations').wwwposteitSection.Route.transformed.originGroup,'/'))]",
-                                            "uri": "[steps('associations').wwwposteitSection.Route.transformed.originGroup]"
-                                        }
-                                    }
-                                },
-                                {
-                                    "name": "CurrentRuleSet",
-                                    "type": "Microsoft.Common.TextBlock",
-                                    "visible": false,
-                                    "options": {
-                                        "text": "[if(empty(last(split(first(steps('associations').wwwposteitSection.Route.transformed.id),'/'))), '---', last(split(first(steps('associations').wwwposteitSection.Route.transformed.id),'/')))]"
-                                    }
-                                },
-                                {
-                                    "name": "wwwposteit-Checkbox",
-                                    "type": "Microsoft.Common.CheckBox",
-                                    "label": "Modify RuleSet:",
-                                    "constraints": {
-                                        "required": false
-                                    }
-                                },
-                                {
-                                    "name": "wwwposteit-ruleset",
-                                    "type": "Microsoft.Common.DropDown",
-                                    "label": "RuleSet to associate to the route:",
-                                    "subLabel": "",
-                                    "defaultValue": "[if(empty(last(split(steps('associations').wwwposteitSection.Route.transformed.id,'/'))), '---', last(split(steps('associations').wwwposteitSection.Route.transformed.id,'/')))]",
-                                    "filter": true,
-                                    "filterPlaceholder": "Filter items ...",
-                                    "constraints": {
-                                        "required": false,
-                                        "allowedValues": "[steps('basics').afdRuleSets.transformed.list]"
-                                    },
-                                    "infoMessages": [],
-                                    "visible": true
-                                }
-                            ]
-                        },
-                        {
-                            "name": "postepayposteitSection",
-                            "type": "Microsoft.Common.Section",
-                            "label": "postepay.poste.it",
-                            "visible": "[equals(steps('associations').sectionAssociationType.ogAssociationType, 'Individually')]",
-                            "elements": [
-                                {
-                                    "name": "Route",
-                                    "type": "Microsoft.Solutions.ArmApiControl",
-                                    "request": {
-                                        "method": "GET",
-                                        "path": "[concat(steps('basics').afdEndpointSelector, '/routes/routing-postepay-poste-it?api-version=2023-05-01')]",
-                                        "transforms": {
-                                            "id": "properties.ruleSets[0].id",
-                                            "originGroup": "properties.originGroup.id"
-                                        }
-                                    }
-                                },
-                                {
-                                    "name": "OriginGroup",
-                                    "type": "Microsoft.Common.TextBlock",
-                                    "visible": true,
-                                    "options": {
-                                        "text": "Default Origin Group:",
-                                        "link": {
-                                            "label": "[last(split(steps('associations').postepayposteitSection.Route.transformed.originGroup,'/'))]",
-                                            "uri": "[steps('associations').postepayposteitSection.Route.transformed.originGroup]"
-                                        }
-                                    }
-                                },
-                                {
-                                    "name": "CurrentRuleSet",
-                                    "type": "Microsoft.Common.TextBlock",
-                                    "visible": false,
-                                    "options": {
-                                        "text": "[if(empty(last(split(steps('associations').postepayposteitSection.Route.transformed.id,'/'))), '---', last(split(steps('associations').postepayposteitSection.Route.transformed.id,'/')))]"
-                                    }
-                                },
-                                {
-                                    "name": "postepayposteit-Checkbox",
-                                    "type": "Microsoft.Common.CheckBox",
-                                    "label": "Modify RuleSet:",
-                                    "constraints": {
-                                        "required": false
-                                    }
-                                },
-                                {
-                                    "name": "postepayposteit-ruleset",
-                                    "type": "Microsoft.Common.DropDown",
-                                    "label": "RuleSet to associate to the route:",
-                                    "subLabel": "",
-                                    "defaultValue": "[if(empty(last(split(steps('associations').postepayposteitSection.Route.transformed.id,'/'))), '---', last(split(steps('associations').postepayposteitSection.Route.transformed.id,'/')))]",
-                                    "filter": true,
-                                    "filterPlaceholder": "Filter items ...",
-                                    "constraints": {
-                                        "required": false,
-                                        "allowedValues": "[steps('basics').afdRuleSets.transformed.list]"
-                                    },
-                                    "infoMessages": [],
-                                    "visible": true
-                                }
-                            ]
+                            "name": "selectedRoutes",
+                            "type": "Microsoft.Common.DropDown",
+                            "label": "Select Routes to Associate RuleSets",
+                            "multiselect": true,
+                            "selectAll": true,
+                            "filter": true,
+                            "filterPlaceholder": "Filter items ...",
+                            "multiLine": true,
+                            "defaultDescription": "No ruleset associated",
+                            "constraints": {
+                                "allowedValues": "[steps('basics').afdRoutes.transformed.routeList]",
+                                "required": true
+                            },
+                            "visible": true
                         }
                     ]
                 }
@@ -266,14 +147,19 @@
         "outputs": {
             "parameters": {
                 "location": "[steps('basics').resourceScope.location.name]",
-                "afd_profile_id": "[steps('basics').afdProfileSelector.id]",
-                "afd_endpoint_id": "[steps('basics').afdEndpointSelector]",
-                "associationType": "[steps('associations').sectionAssociationType.ogAssociationType]",
-                "all_ruleset_id": "[steps('associations').sectionAssociationType.ddAllRuleset]",
-                "wwwposteit-ruleset": "[steps('associations').wwwposteitSection.wwwposteit-ruleset]",
-                "wwwposteit-modify": "[steps('associations').wwwposteitSection.wwwposteit-Checkbox]",
-                "postepayposteit-ruleset": "[steps('associations').postepayposteitSection.postepayposteit-ruleset]",
-                "postepayposteit-modify": "[steps('associations').postepayposteitSection.postepayposteit-Checkbox]"
+                "afd_profile_id": "[steps('basics').afdProfile.id]",
+                "afd_endpoint_id": "[steps('basics').afdEndpoint.id]",
+                "selected_ruleset_id": "[steps('associations').ddRuleset]",
+                "selected_routes": "[steps('associations').selectedRoutes]",
+                "route_originGroups": "[steps('basics').afdRoutes.transformed.originGroups]",
+                "route_customDomains": "[steps('basics').afdRoutes.transformed.customDomains]",
+                "route_patterns": "[steps('basics').afdRoutes.transformed.patterns]",
+                "route_protocols": "[steps('basics').afdRoutes.transformed.protocols]",
+                "route_httpsRedirect": "[steps('basics').afdRoutes.transformed.httpsRedirect]",
+                "route_forwardingProto": "[steps('basics').afdRoutes.transformed.forwardingProtocol]",
+                "route_enabledState": "[steps('basics').afdRoutes.transformed.enabledState]",
+                "route_cacheConfig": "[steps('basics').afdRoutes.transformed.cacheConfiguration]",
+                "all_route_ids": "[steps('basics').afdRoutes.transformed.routeIds]"
             },
             "kind": "ResourceGroup",
             "location": "[steps('basics').resourceScope.location.name]",
