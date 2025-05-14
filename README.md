@@ -16,7 +16,7 @@ Workflow
 4. Multi-select the routes that should receive that Rule Set.  
 5. Press **Review + create** → **Create**. The deployment runs in the background and updates every selected route.
 
-## Known bugs / work-arounds
+## Known issues / work-arounds
 
 | # | Issue | Work-around |
 |---|-------|-------------|
