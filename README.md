@@ -16,9 +16,10 @@ Workflow
 4. Multi-select the routes that should receive that Rule Set.  
 5. Press **Review + create** → **Create**. The deployment runs in the background and updates every selected route.
 
-## Known bugs / work-arounds
+## Known issues / work-arounds
 
 | # | Issue | Work-around |
 |---|-------|-------------|
-| 1 | When only **one** route is selected the portal sometimes serialises the value as a *string* instead of a single-item array. The ARM template then fails validation. | Select a second route, then immediately de-select it and try **Create** again – the portal now emits a proper single-item array. |
+| 1 | When only **one** route is selected, sometimes the portal serializes the value as a *string* instead of a single-item array. The ARM template then fails validation. | Select a second route, then immediately de-select it and try **Create** again – the portal now emits a proper single-item array. |
 | 2 | After a Rule Set association change the *Route* blade in Front Door Manager may still show the **old** Rule Set. | Press **F5** in the browser (the page reload) – the *Refresh* button inside the blade is not sufficient. You can also check the associations in the other *Rule Sets* blade, since it reflects the change immediately without forcing a browser refresh |
+| 3 | Arm templates have a size limit of 4 MiB (https://learn.microsoft.com/en-us/azure/azure-resource-manager/templates/best-practices#template-limits). For FrontDoor profiles with complex configurations using many routes with additional configurations (ie. caching), the limit can be potentially reached | Currently being investigated
