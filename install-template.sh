@@ -15,5 +15,5 @@ az ts create \
   --display-name "$templateSpecDisplayName" \
   --description "$templateSpecDescription" \
   --template-file ./template.json \
-  --ui-form-definition-file ./uiFormDefinition.json \
+  --ui-form-definition ./uiFormDefinition.json \
   --verbose
