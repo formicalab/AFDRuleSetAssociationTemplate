@@ -93,6 +93,7 @@
                                 "path": "[concat(steps('basics').afdEndpoint.id, '/routes?api-version=2025-04-15')]",
                                 "transforms": {
                                     "routeList": "[value|[*].{label:name, value:id, description: properties.ruleSets[0].id}][]",
+                                    "routeSummary": "[value|[*].{name:name, ruleSetCount:length(properties.ruleSets), firstRuleSet:properties.ruleSets[0].id}][]",
                                     "originGroups": "[value|[*].properties.originGroup.id][]",
                                     "customDomains": "[value|[*].properties.customDomains][]",
                                     "patterns": "[value|[*].properties.patternsToMatch][]",
@@ -112,12 +113,24 @@
                     "label": "Current Route Configuration",
                     "elements": [
                         {
-                            "name": "routesSummary",
+                            "name": "routesSummaryText",
                             "type": "Microsoft.Common.TextBlock",
                             "visible": true,
                             "options": {
-                                "text": "[concat('Total routes found: ', string(length(steps('basics').afdRoutes.value)))]"
+                                "text": "[concat('Found ', string(length(steps('basics').afdRoutes.value)), ' route(s) in this endpoint. Review the configuration below before proceeding.')]"
                             }
+                        },
+                        {
+                            "name": "routesTable",
+                            "type": "Microsoft.Common.TextBox",
+                            "label": "Current Routes and Associated RuleSets",
+                            "toolTip": "This shows all routes and their current ruleset associations. Read-only.",
+                            "multiLine": true,
+                            "constraints": {
+                                "required": false
+                            },
+                            "defaultValue": "[join(map(steps('basics').afdRoutes.transformed.routeSummary, (item) => concat(item.name, ': ', if(equals(item.ruleSetCount, 0), 'No rulesets', if(equals(item.ruleSetCount, 1), concat('1 ruleset'), concat(string(item.ruleSetCount), ' rulesets ⚠️'))))), '\\n')]",
+                            "visible": true
                         },
                         {
                             "name": "noteMessage",
@@ -125,7 +138,7 @@
                             "visible": true,
                             "options": {
                                 "style": "Info",
-                                "text": "In the next step, you will select which routes to update. Each route shows its currently associated ruleset(s). Routes with multiple rulesets will have ALL of them replaced with your single selection."
+                                "text": "Routes marked with ⚠️ have multiple rulesets. In the next step, if you select these routes, ALL their rulesets will be replaced with your single selection."
                             }
                         }
                     ]
