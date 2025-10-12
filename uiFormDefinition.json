@@ -92,7 +92,7 @@
                                 "method": "GET",
                                 "path": "[concat(steps('basics').afdEndpoint.id, '/routes?api-version=2025-04-15')]",
                                 "transforms": {
-                                    "routeList": "[value|[*].{label:name, value:id, description: properties.ruleSets[0].id}][]",
+                                    "routeList": "[value|[*].{label:name, value:id, description: join(properties.ruleSets[*].id, ', ')}][]",
                                     "originGroups": "[value|[*].properties.originGroup.id][]",
                                     "customDomains": "[value|[*].properties.customDomains][]",
                                     "patterns": "[value|[*].properties.patternsToMatch][]",
