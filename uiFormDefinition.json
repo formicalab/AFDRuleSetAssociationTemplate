@@ -142,7 +142,7 @@
                             "multiLine": true,
                             "defaultDescription": "No rulesets currently associated",
                             "constraints": {
-                                "allowedValues": "[map(steps('basics').afdRoutes.transformed.routeList, (item) => parse(concat('{\"label\":\"', item.label, '\",\"value\":\"', item.value, '\",\"description\":\"', if(empty(item.ruleSetIds), 'No rulesets', if(greater(length(item.ruleSetIds), 1), concat('⚠️ ', string(length(item.ruleSetIds)), ' ruleset(s): ', join(map(item.ruleSetIds, (rs) => last(split(rs.id, '/'))), ', ')), concat(string(length(item.ruleSetIds)), ' ruleset(s): ', join(map(item.ruleSetIds, (rs) => last(split(rs.id, '/'))), ', ')))), '\"}')))]",
+                                "allowedValues": "[map(steps('basics').afdRoutes.transformed.routeList, (item) => parse(concat('{\"label\":\"', item.label, '\",\"value\":\"', item.value, '\",\"description\":\"', if(empty(item.ruleSetIds), 'No rulesets', concat(if(greater(length(item.ruleSetIds), 1), '⚠️ ', ''), string(length(item.ruleSetIds)), ' ruleset(s): ', join(map(item.ruleSetIds, (rs) => last(split(rs.id, '/'))), ', '))), '\"}')))]",
                                 "required": true
                             },
                             "visible": true
