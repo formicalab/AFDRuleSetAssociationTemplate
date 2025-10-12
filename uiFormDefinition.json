@@ -92,7 +92,7 @@
                                 "method": "GET",
                                 "path": "[concat(steps('basics').afdEndpoint.id, '/routes?api-version=2025-04-15')]",
                                 "transforms": {
-                                    "routeList": "[value|[*].{label:name, value:id, ruleSetIds:properties.ruleSets}][]",
+                                    "routeList": "[value|[*].{label:name, value:id, ruleSetCount:length(properties.ruleSets)}][]",
                                     "originGroups": "[value|[*].properties.originGroup.id][]",
                                     "customDomains": "[value|[*].properties.customDomains][]",
                                     "patterns": "[value|[*].properties.patternsToMatch][]",
@@ -142,7 +142,7 @@
                             "multiLine": true,
                             "defaultDescription": "No rulesets currently associated",
                             "constraints": {
-                                "allowedValues": "[map(steps('basics').afdRoutes.transformed.routeList, (item) => parse(concat('{\"label\":\"', item.label, '\",\"value\":\"', item.value, '\",\"description\":\"', if(empty(item.ruleSetIds), 'No rulesets', concat(if(greater(length(item.ruleSetIds), 1), '⚠️ ', ''), string(length(item.ruleSetIds)), ' ruleset(s): ', join(map(item.ruleSetIds, (rs) => last(split(rs.id, '/'))), ', '))), '\"}')))]",
+                                "allowedValues": "[map(steps('basics').afdRoutes.transformed.routeList, (item) => parse(concat('{\"label\":\"', item.label, '\",\"value\":\"', item.value, '\",\"description\":\"', if(equals(item.ruleSetCount, 0), 'No rulesets', if(greater(item.ruleSetCount, 1), concat('⚠️ ', string(item.ruleSetCount), ' rulesets'), concat(string(item.ruleSetCount), ' ruleset'))), '\"}')))]" ,
                                 "required": true
                             },
                             "visible": true
