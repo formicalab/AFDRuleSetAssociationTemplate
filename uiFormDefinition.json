@@ -92,7 +92,7 @@
                                 "method": "GET",
                                 "path": "[concat(steps('basics').afdEndpoint.id, '/routes?api-version=2025-04-15')]",
                                 "transforms": {
-                                    "routeList": "[value|[*].{label:name, value:id, description: join(properties.ruleSets[*].id, ', ')}][]",
+                                    "routeList": "[value|[*].{label:name, value:id, description: properties.ruleSets[0].id}][]",
                                     "originGroups": "[value|[*].properties.originGroup.id][]",
                                     "customDomains": "[value|[*].properties.customDomains][]",
                                     "patterns": "[value|[*].properties.patternsToMatch][]",
@@ -103,6 +103,29 @@
                                     "cacheConfiguration": "value|[*].{cacheConfiguration: properties.cacheConfiguration}",
                                     "routeIds": "[value|[*].id][]"
                                 }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "currentState",
+                    "label": "Current Route Configuration",
+                    "elements": [
+                        {
+                            "name": "routesSummary",
+                            "type": "Microsoft.Common.TextBlock",
+                            "visible": true,
+                            "options": {
+                                "text": "[concat('Total routes found: ', string(length(steps('basics').afdRoutes.value)))]"
+                            }
+                        },
+                        {
+                            "name": "noteMessage",
+                            "type": "Microsoft.Common.InfoBox",
+                            "visible": true,
+                            "options": {
+                                "style": "Info",
+                                "text": "In the next step, you will select which routes to update. Each route shows its currently associated ruleset(s). Routes with multiple rulesets will have ALL of them replaced with your single selection."
                             }
                         }
                     ]
