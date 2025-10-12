@@ -117,7 +117,7 @@
                             "visible": true,
                             "options": {
                                 "style": "Warning",
-                                "text": "⚠️ IMPORTANT: This operation will REPLACE all existing ruleset associations on the selected routes. If a route currently has multiple rulesets, they will ALL be removed and replaced with only the ruleset you select below. Select '---' to remove all ruleset associations."
+                                "text": "IMPORTANT: This operation will REPLACE all existing ruleset associations on the selected routes. If a route currently has multiple rulesets, they will ALL be removed and replaced with only the ruleset you select below; in this case, consider deselecting the route and apply changes manually from the Azure Portal. Select '---' to remove all ruleset associations."
                             }
                         },
                         {
@@ -142,7 +142,7 @@
                             "multiLine": true,
                             "defaultDescription": "No rulesets currently associated",
                             "constraints": {
-                                "allowedValues": "[map(steps('basics').afdRoutes.transformed.routeList, (item) => parse(concat('{\"label\":\"', item.label, '\",\"value\":\"', item.value, '\",\"description\":\"', if(empty(item.ruleSetIds), 'No rulesets', concat(string(length(item.ruleSetIds)), ' ruleset(s)')), '\"}')))]",
+                                "allowedValues": "[map(steps('basics').afdRoutes.transformed.routeList, (item) => parse(concat('{\"label\":\"', item.label, '\",\"value\":\"', item.value, '\",\"description\":\"', if(empty(item.ruleSetIds), 'No rulesets', if(greater(length(item.ruleSetIds), 1), concat('⚠️ ', string(length(item.ruleSetIds)), ' ruleset(s): ', join(map(item.ruleSetIds, (rs) => last(split(rs.id, '/'))), ', ')), concat(string(length(item.ruleSetIds)), ' ruleset(s): ', join(map(item.ruleSetIds, (rs) => last(split(rs.id, '/'))), ', ')))), '\"}')))]",
                                 "required": true
                             },
                             "visible": true
