@@ -92,7 +92,7 @@
                                 "method": "GET",
                                 "path": "[concat(steps('basics').afdEndpoint.id, '/routes?api-version=2025-04-15')]",
                                 "transforms": {
-                                    "routeList": "[value|[*].{label:name, value:id, ruleSetCount:length(properties.ruleSets)}][]",
+                                    "routeList": "[value|[*].{label:name, value:id, description: properties.ruleSets[0].id}][]",
                                     "originGroups": "[value|[*].properties.originGroup.id][]",
                                     "customDomains": "[value|[*].properties.customDomains][]",
                                     "patterns": "[value|[*].properties.patternsToMatch][]",
@@ -134,15 +134,15 @@
                         {
                             "name": "selectedRoutes",
                             "type": "Microsoft.Common.DropDown",
-                            "label": "Select Routes (current rulesets shown below each route name)",
+                            "label": "Select Routes to Associate RuleSets",
                             "multiselect": true,
                             "selectAll": true,
                             "filter": true,
                             "filterPlaceholder": "Filter items ...",
                             "multiLine": true,
-                            "defaultDescription": "No rulesets currently associated",
+                            "defaultDescription": "No ruleset associated",
                             "constraints": {
-                                "allowedValues": "[map(steps('basics').afdRoutes.transformed.routeList, (item) => parse(concat('{\"label\":\"', item.label, '\",\"value\":\"', item.value, '\",\"description\":\"', if(equals(item.ruleSetCount, 0), 'No rulesets', if(greater(item.ruleSetCount, 1), concat('⚠️ ', string(item.ruleSetCount), ' rulesets'), concat(string(item.ruleSetCount), ' ruleset'))), '\"}')))]" ,
+                                "allowedValues": "[steps('basics').afdRoutes.transformed.routeList]",
                                 "required": true
                             },
                             "visible": true
