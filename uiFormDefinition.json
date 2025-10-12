@@ -123,7 +123,7 @@
                         {
                             "name": "ddRuleset",
                             "type": "Microsoft.Common.DropDown",
-                            "label": "RuleSet to associate (will REPLACE all existing rulesets, select '---' to remove all):",
+                            "label": "RuleSet to associate (will REPLACE all existing rulesets); select '---' to remove all:",
                             "filter": true,
                             "filterPlaceholder": "Filter items ...",
                             "constraints": {
