@@ -14,7 +14,7 @@
                             "type": "Microsoft.Common.InfoBox",
                             "visible": true,
                             "options": {
-                                "icon": "Info",
+                                "style": "Info",
                                 "text": "[concat('Use this template to modify RuleSet associations for <ul><li>FrontDoor profile: <b>', steps('basics').afdProfileSelector.name, '</b> (sku: ', steps('basics').afdProfile.sku.name, ')</li><li>Endpoint: <b>', steps('basics').afdEndpoint.name, '</b> (hostName: ', steps('basics').afdEndpoint.properties.hostName, ')</li><li>Routes: <b>', string(length(steps('basics').afdRoutes.transformed.routeIds)),  '</b></li><li>Available rulesets: <b>', string(length(steps('basics').afdRuleSets.value))  ,'</b></li></ul>')]"
                             }
                         },
@@ -22,7 +22,7 @@
                             "name": "resourceScope",
                             "type": "Microsoft.Common.ResourceScope",
                             "instanceDetailsLabel": "Specify the subscription and resource group of the Front Door profile",
-                            "globalResource": "true",
+                            "globalResource": true,
                             "resourceGroup": {
                                 "allowExisting": true
                             }
@@ -92,7 +92,7 @@
                                 "method": "GET",
                                 "path": "[concat(steps('basics').afdEndpoint.id, '/routes?api-version=2025-04-15')]",
                                 "transforms": {
-                                    "routeList": "[value|[*].{label:name, value:id, description: properties.ruleSets[0].id}][]",
+                                    "routeList": "[value|[*].{label:name, value:id, ruleSetIds:properties.ruleSets}][]",
                                     "originGroups": "[value|[*].properties.originGroup.id][]",
                                     "customDomains": "[value|[*].properties.customDomains][]",
                                     "patterns": "[value|[*].properties.patternsToMatch][]",
@@ -112,30 +112,37 @@
                     "label": "Associations",
                     "elements": [
                         {
+                            "name": "warningMessage",
+                            "type": "Microsoft.Common.InfoBox",
+                            "visible": true,
+                            "options": {
+                                "style": "Warning",
+                                "text": "⚠️ IMPORTANT: This operation will REPLACE all existing ruleset associations on the selected routes. If a route currently has multiple rulesets, they will ALL be removed and replaced with only the ruleset you select below. Select '---' to remove all ruleset associations."
+                            }
+                        },
+                        {
                             "name": "ddRuleset",
                             "type": "Microsoft.Common.DropDown",
-                            "label": "RuleSet to associate:",
-                            "subLabel": "This ruleset will be associated to all the selected routes",
+                            "label": "RuleSet to associate (will REPLACE all existing rulesets):",
                             "filter": true,
                             "filterPlaceholder": "Filter items ...",
                             "constraints": {
                                 "required": true,
                                 "allowedValues": "[steps('basics').afdRuleSets.transformed.list]"
-                            },
-                            "infoMessages": []
+                            }
                         },
                         {
                             "name": "selectedRoutes",
                             "type": "Microsoft.Common.DropDown",
-                            "label": "Select Routes to Associate RuleSets",
+                            "label": "Select Routes (current rulesets shown below each route name)",
                             "multiselect": true,
                             "selectAll": true,
                             "filter": true,
                             "filterPlaceholder": "Filter items ...",
                             "multiLine": true,
-                            "defaultDescription": "No ruleset associated",
+                            "defaultDescription": "No rulesets currently associated",
                             "constraints": {
-                                "allowedValues": "[steps('basics').afdRoutes.transformed.routeList]",
+                                "allowedValues": "[map(steps('basics').afdRoutes.transformed.routeList, (item) => parse(concat('{\"label\":\"', item.label, '\",\"value\":\"', item.value, '\",\"description\":\"', if(empty(item.ruleSetIds), 'No rulesets', concat(string(length(item.ruleSetIds)), ' ruleset(s)')), '\"}')))]",
                                 "required": true
                             },
                             "visible": true
