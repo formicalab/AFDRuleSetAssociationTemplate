@@ -151,6 +151,55 @@
                             "visible": true
                         }
                     ]
+                },
+                {
+                    "name": "review",
+                    "label": "Review Changes",
+                    "elements": [
+                        {
+                            "name": "reviewInfo",
+                            "type": "Microsoft.Common.InfoBox",
+                            "visible": true,
+                            "options": {
+                                "style": "Info",
+                                "text": "Review the changes that will be applied. This deployment will affect the selected routes."
+                            }
+                        },
+                        {
+                            "name": "operationSummary",
+                            "type": "Microsoft.Common.TextBlock",
+                            "visible": true,
+                            "options": {
+                                "text": "[concat('<b>Operation:</b> ', if(equals(steps('associations').ddRuleset, '---'), 'Remove all Bilanciamento rulesets', concat('Replace Bilanciamento rulesets with <b>', last(split(steps('associations').ddRuleset, '/')), '</b>')))]"
+                            }
+                        },
+                        {
+                            "name": "routesSummary",
+                            "type": "Microsoft.Common.TextBlock",
+                            "visible": true,
+                            "options": {
+                                "text": "[concat('<b>Affected Routes:</b> ', string(length(steps('associations').selectedRoutes)), ' route(s) selected')]"
+                            }
+                        },
+                        {
+                            "name": "impactSummary",
+                            "type": "Microsoft.Common.InfoBox",
+                            "visible": "[greater(length(steps('associations').selectedRoutes), 0)]",
+                            "options": {
+                                "style": "Warning",
+                                "text": "[concat('<b>Impact:</b><ul><li><b>Preserved:</b> All non-Bilanciamento rulesets will remain in their current positions</li><li><b>Modified:</b> Bilanciamento rulesets will be ', if(equals(steps('associations').ddRuleset, '---'), 'removed', 'replaced in their current positions'), '</li><li><b>Routes affected:</b> ', string(length(steps('associations').selectedRoutes)), '</li></ul>')]"
+                            }
+                        },
+                        {
+                            "name": "detailsNote",
+                            "type": "Microsoft.Common.InfoBox",
+                            "visible": true,
+                            "options": {
+                                "style": "Info",
+                                "text": "<b>Note:</b> After deployment, navigate to the Front Door resource in Azure Portal to view the updated ruleset associations for each route. The changes will be visible in the Routes blade under each endpoint."
+                            }
+                        }
+                    ]
                 }
             ]
         },
