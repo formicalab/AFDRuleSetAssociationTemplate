@@ -3,7 +3,7 @@
     "view": {
         "kind": "Form",
         "properties": {
-            "title": "FrontDoor RuleSet Associations",
+            "title": "FrontDoor Ruleset Associations",
             "steps": [
                 {
                     "name": "basics",
@@ -15,7 +15,7 @@
                             "visible": true,
                             "options": {
                                 "style": "Info",
-                                "text": "[concat('Use this template to modify RuleSet associations for <ul><li>FrontDoor profile: <b>', steps('basics').afdProfileSelector.name, '</b> (sku: ', steps('basics').afdProfile.sku.name, ')</li><li>Endpoint: <b>', steps('basics').afdEndpoint.name, '</b> (hostName: ', steps('basics').afdEndpoint.properties.hostName, ')</li><li>Routes: <b>', string(length(steps('basics').afdRoutes.transformed.routeIds)),  '</b></li><li>Available rulesets: <b>', string(length(steps('basics').afdRuleSets.value))  ,'</b></li></ul>')]"
+                                "text": "[concat('Use this template to modify ruleset associations for <ul><li>FrontDoor profile: <b>', steps('basics').afdProfileSelector.name, '</b> (sku: ', steps('basics').afdProfile.sku.name, ')</li><li>Endpoint: <b>', steps('basics').afdEndpoint.name, '</b> (hostName: ', steps('basics').afdEndpoint.properties.hostName, ')</li><li>Routes: <b>', string(length(steps('basics').afdRoutes.transformed.routeIds)),  '</b></li><li>Available rulesets: <b>', string(length(steps('basics').afdRuleSets.value))  ,'</b></li></ul>')]"
                             }
                         },
                         {
@@ -58,10 +58,10 @@
                         {
                             "name": "afdEndpointSelector",
                             "type": "Microsoft.Common.DropDown",
-                            "label": "Select the desired endpoint in the above FrontDoor",
+                            "label": "Select the desired endpoint in the above Front Door",
                             "filter": true,
                             "constraints": {
-                                "allowedValues": "[map(steps('basics').afdEndpoints.value, (item) => parse(concat('{\"label\":\"', item.name, '\",\"value\":\"', item.id, '\"}')))]",
+                                "allowedValues": "[map(steps('basics').afdEndpoints.value, (item) => parse(concat('{\"label\":\"', item.name, '\",\"value\":\"', item.id, '\",\"description\":\"', item.properties.hostName, '\"}')))]",
                                 "required": true
                             },
                             "visible": true
@@ -87,6 +87,15 @@
                             }
                         },
                         {
+                            "name": "noRoutesWarning",
+                            "type": "Microsoft.Common.InfoBox",
+                            "visible": "[equals(length(coalesce(steps('basics').afdRoutes.value, [])), 0)]",
+                            "options": {
+                                "style": "Warning",
+                                "text": "The selected endpoint has <b>no routes</b>. Select a different endpoint or create routes first."
+                            }
+                        },
+                        {
                             "name": "afdRoutes",
                             "type": "Microsoft.Solutions.ArmApiControl",
                             "request": {
@@ -106,6 +115,14 @@
                                     "routeIds": "[value|[*].id][]"
                                 }
                             }
+                        },
+                        {
+                            "name": "loadBalancingStatistics",
+                            "type": "Microsoft.Common.TextBlock",
+                            "visible": true,
+                            "options": {
+                                "text": "[concat('📊 <b>Route Statistics:</b> ', string(length(filter(steps('basics').afdRoutes.transformed.routeList, (r) => greater(length(filter(r.ruleSetIds, (rs) => startsWith(toLower(last(split(rs.id, '/'))), 'bilanciamento'))), 0)))), ' of ', string(length(steps('basics').afdRoutes.value)), ' routes have load balancing rulesets configured')]"
+                            }
                         }
                     ]
                 },
@@ -114,18 +131,27 @@
                     "label": "Associations",
                     "elements": [
                         {
+                            "name": "noLoadBalancingRulesetsInfo",
+                            "type": "Microsoft.Common.InfoBox",
+                            "visible": "[equals(length(filter(steps('basics').afdRuleSets.transformed.listWithRemove, (item) => startsWith(toLower(item.label), 'bilanciamento'))), 0)]",
+                            "options": {
+                                "style": "Warning",
+                                "text": "No load balancing rulesets found in this Front Door profile. You can only remove existing load balancing associations by selecting '---'."
+                            }
+                        },
+                        {
                             "name": "warningMessage",
                             "type": "Microsoft.Common.InfoBox",
                             "visible": true,
                             "options": {
                                 "style": "Info",
-                                "text": "This operation will manage the association of ruleset used for load balancing (names start with <b>Bilanciamento</b>) for the selected routes.\n\n<b><u>Choices:</u></b>\n• Select a load balancing ruleset: all existing load balancing rulesets will be removed and replaced with your selection. Other rulesets will be preserved.\n• Select '---': all load balancing rulesets will be removed. Other rulesets will be preserved."
+                                "text": "This operation will manage the association of rulesets used for load balancing (names start with <b>Bilanciamento</b>) for the selected routes.<br/><br/><b>Choices:</b><br/>• Select a load balancing ruleset: all existing load balancing rulesets will be removed and replaced with your selection. Other rulesets will be preserved.<br/>• Select '---': all load balancing rulesets will be removed. Other rulesets will be preserved."
                             }
                         },
                         {
                             "name": "ddRuleset",
                             "type": "Microsoft.Common.DropDown",
-                            "label": "Select a load balancing ruleset to associate or '---' to remove load balancing rulesets associated to the routes:",
+                            "label": "Load balancing ruleset to associate or '---' to remove load balancing rulesets associated with the routes:",
                             "placeholder": "Only load balancing rulesets are shown",
                             "filter": true,
                             "filterPlaceholder": "Filter items ...",
@@ -135,9 +161,17 @@
                             }
                         },
                         {
+                            "name": "currentSelectionSummary",
+                            "type": "Microsoft.Common.TextBlock",
+                            "visible": "[not(empty(steps('associations').ddRuleset))]",
+                            "options": {
+                                "text": "[concat('✓ <b>Selected:</b> ', if(equals(steps('associations').ddRuleset, '---'), 'Remove all load balancing rulesets', concat('Replace with <b>', last(split(steps('associations').ddRuleset, '/')), '</b>')))]"
+                            }
+                        },
+                        {
                             "name": "selectedRoutes",
                             "type": "Microsoft.Common.DropDown",
-                            "label": "Select Routes to associate RuleSets",
+                            "label": "Routes to associate the rulesets with",
                             "multiselect": true,
                             "selectAll": true,
                             "filter": true,
@@ -145,10 +179,51 @@
                             "multiLine": true,
                             "defaultDescription": "No ruleset associated",
                             "constraints": {
-                                "allowedValues": "[map(steps('basics').afdRoutes.transformed.routeList, (item) => parse(concat('{\"label\":\"', item.label, '\",\"value\":\"', item.value, '\",\"description\":\"', if(empty(item.ruleSetIds), 'No rulesets', if(equals(length(item.ruleSetIds), 1), '1 ruleset', concat(string(length(item.ruleSetIds)), ' rulesets'))), '\"}')))]",
+                                "allowedValues": "[map(steps('basics').afdRoutes.transformed.routeList, (item) => parse(concat('{\"label\":\"', item.label, '\",\"value\":\"', item.value, '\",\"description\":\"', if(empty(item.ruleSetIds), 'No rulesets', if(greater(length(filter(item.ruleSetIds, (rs) => startsWith(toLower(last(split(rs.id, '/'))), 'bilanciamento'))), 0), concat(string(length(item.ruleSetIds)), ' rulesets (has load balancing)'), if(equals(length(item.ruleSetIds), 1), '1 ruleset', concat(string(length(item.ruleSetIds)), ' rulesets')))), '\"}')))]",
                                 "required": true
                             },
                             "visible": true
+                        }
+                    ]
+                },
+                {
+                    "name": "review",
+                    "label": "Review Changes",
+                    "elements": [
+                        {
+                            "name": "reviewInfo",
+                            "type": "Microsoft.Common.InfoBox",
+                            "visible": true,
+                            "options": {
+                                "style": "Info",
+                                "text": "Review the changes that will be applied. This deployment will affect the selected routes."
+                            }
+                        },
+                        {
+                            "name": "operationSummary",
+                            "type": "Microsoft.Common.TextBlock",
+                            "visible": true,
+                            "options": {
+                                "text": "[if(equals(steps('associations').ddRuleset, '---'), '🗑️ <b>Operation: REMOVE</b> all load balancing rulesets', concat('🔄 <b>Operation: REPLACE</b> load balancing rulesets with <b>', last(split(steps('associations').ddRuleset, '/')), '</b>'))]"
+                            }
+                        },
+                        {
+                            "name": "impactSummary",
+                            "type": "Microsoft.Common.InfoBox",
+                            "visible": "[greater(length(steps('associations').selectedRoutes), 0)]",
+                            "options": {
+                                "style": "Warning",
+                                "text": "[concat('<b>Impact:</b><ul><li><b>Preserved:</b> All non-load balancing rulesets will remain in their current positions</li><li><b>Modified:</b> Load balancing rulesets will be ', if(equals(steps('associations').ddRuleset, '---'), 'removed', 'replaced in their current positions'), '</li><li><b>Routes affected:</b> ', string(length(steps('associations').selectedRoutes)), '. The list will be provided in the final page of this wizard</li></ul>')]"
+                            }
+                        },
+                        {
+                            "name": "detailsNote",
+                            "type": "Microsoft.Common.InfoBox",
+                            "visible": true,
+                            "options": {
+                                "style": "Info",
+                                "text": "<b>Note:</b> After deployment, navigate to the Front Door resource in Azure Portal to view the updated ruleset associations for each route. The changes will be visible in the Routes blade under each endpoint."
+                            }
                         }
                     ]
                 }

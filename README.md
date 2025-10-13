@@ -49,12 +49,48 @@ The UI displays the current number of rulesets associated with each route. Only 
 - ✅ Case-insensitive matching for "Bilanciamento" prefix
 
 ## Workflow
-1. Choose subscription / resource group.  
-2. Select the Front Door profile and endpoint.  
-3. **Review the current ruleset associations** shown for each route in the dropdown.  
-4. Pick the Rule Set to associate (or `---` to remove any association).  
-5. Multi-select the routes that should receive that Rule Set.  
-6. Press **Review + create** → **Create**. The deployment runs in the background and updates every selected route.
+
+### Step 1: Basics
+- Choose subscription / resource group
+- Select the Front Door profile and endpoint (with hostname shown)
+- View statistics: how many routes have load balancing configured
+- **Empty endpoint warning**: If the endpoint has no routes, a warning is displayed
+
+### Step 2: Associations
+- **No Bilanciamento warning**: If profile has no load balancing rulesets, an info message explains only removal is possible
+- Pick the load balancing ruleset to associate (or `---` to remove)
+- **Selection confirmation**: Visual confirmation shows what was selected
+- Multi-select target routes with descriptions showing:
+  - Number of rulesets per route
+  - **(has load balancing)** indicator for routes with existing Bilanciamento rulesets
+
+### Step 3: Review Changes
+Preview before deployment with:
+- **Operation summary** with visual icons (🗑️ remove / 🔄 replace)
+- **Impact details**: What will be preserved vs. changed, with route count
+
+### Step 4: Final Confirmation
+The final Azure Portal confirmation page displays the complete list of affected route names before deployment execution.
+
+## UI Features
+
+The wizard includes several validation and feedback features:
+
+**Visual Indicators:**
+- 📊 Route statistics showing load balancing configuration overview
+- 🗑️ / 🔄 Operation type icons for quick identification
+- ⚠️ Warning messages for empty endpoints or edge cases
+- ℹ️ Informational guidance throughout the workflow
+
+**Context-Aware Descriptions:**
+- Endpoint hostnames displayed in dropdown
+- Route descriptions show ruleset count and load balancing status
+- Selection confirmations after each major choice
+
+**Validation:**
+- Empty endpoint detection
+- No load balancing rulesets detection
+- Clear messaging for edge cases
 
 ## Known issues / work-arounds
 
