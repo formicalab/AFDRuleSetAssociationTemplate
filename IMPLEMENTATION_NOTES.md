@@ -13,6 +13,11 @@ This solution implements selective ruleset association management for Azure Fron
 
 ## UI Definition Architecture (uiFormDefinition.json)
 
+The UI workflow is organized into three steps:
+1. **Basics** - Resource selection and data collection
+2. **Associations** - Ruleset and route selection
+3. **Review Changes** - Pre-deployment preview and validation
+
 ### Data Collection Pipeline
 
 #### 1. RuleSet Enumeration
@@ -67,6 +72,68 @@ This solution implements selective ruleset association management for Azure Fron
 - `startsWith()` performs prefix matching on normalized label
 - `or()` short-circuits to include the sentinel `---` option
 - Result: Dropdown displays only Bilanciamento rulesets + removal option
+
+### Review Step (Pre-Deployment Preview)
+
+The third step provides a comprehensive preview before deployment execution:
+
+#### 1. Operation Summary
+```json
+{
+  "name": "operationSummary",
+  "type": "Microsoft.Common.TextBlock",
+  "options": {
+    "text": "[concat('<b>Operation:</b> ', if(equals(steps('associations').ddRuleset, '---'), 
+      'Remove all load balancing rulesets', 
+      concat('Replace load balancing rulesets with <b>', last(split(steps('associations').ddRuleset, '/')), '</b>')))]"
+  }
+}
+```
+
+**Implementation:**
+- Evaluates selected ruleset ID to determine operation type
+- Uses `last(split())` to extract ruleset name from Azure resource ID
+- Displays human-readable operation description
+
+#### 2. Routes Summary
+```json
+{
+  "name": "routesSummary",
+  "type": "Microsoft.Common.TextBlock",
+  "options": {
+    "text": "[concat('<b>Affected Routes:</b> ', string(length(steps('associations').selectedRoutes)), ' route(s) selected')]"
+  }
+}
+```
+
+**Implementation:**
+- Counts selected routes using `length()` function
+- Provides immediate feedback on deployment scope
+
+#### 3. Impact Summary
+```json
+{
+  "name": "impactSummary",
+  "type": "Microsoft.Common.InfoBox",
+  "visible": "[greater(length(steps('associations').selectedRoutes), 0)]",
+  "options": {
+    "style": "Warning",
+    "text": "[concat('<b>Impact:</b><ul><li><b>Preserved:</b> All non-load balancing rulesets...</li>...')]"
+  }
+}
+```
+
+**Implementation:**
+- Warning-styled InfoBox highlights critical impact information
+- Conditional visibility ensures display only when routes are selected
+- Lists preserved vs. modified ruleset categories
+- Shows affected route count
+
+**Benefits:**
+- **Validation**: Operator confirms intended changes before deployment
+- **Safety**: Visual preview reduces configuration errors
+- **Transparency**: Clear communication of operation scope and impact
+- **Guidance**: Post-deployment verification instructions
 
 ## ARM Template Architecture (template.json)
 
@@ -436,6 +503,45 @@ Key function categories used in this implementation:
 - **processedRuleSets Variable**: O(r × s) ruleset objects in memory
 - **Template Size**: ~2KB base + ~500 bytes per route
 
+## UI/UX Design Considerations
+
+### Review Step Architecture
+
+The review step implements a three-tier information hierarchy:
+
+1. **Informational Context** (Blue InfoBox)
+   - Purpose: Orient the user to the review phase
+   - Content: General guidance about reviewing changes
+
+2. **Operation Details** (TextBlocks)
+   - Purpose: Communicate specific operation parameters
+   - Content: Operation type, selected ruleset name, affected route count
+   - Format: Bold labels with dynamic values
+
+3. **Impact Warning** (Yellow InfoBox)
+   - Purpose: Highlight critical impact information requiring attention
+   - Content: Preservation guarantees, modification scope, affected resource count
+   - Style: Warning-level visual emphasis
+
+4. **Post-Deployment Guidance** (Blue InfoBox)
+   - Purpose: Set expectations for validation
+   - Content: Instructions for verifying changes in Azure Portal
+
+**Design Rationale:**
+- Progressive disclosure: Summary → Details → Impact → Next steps
+- Visual hierarchy through InfoBox styling (Info/Warning) and TextBlock formatting
+- Conditional rendering ensures relevance (impact shown only when routes selected)
+
+### Expression Language Limitations
+
+**Challenge**: Displaying comma-separated route names  
+**Constraint**: UI Definition expression language lacks `join()` function  
+**Attempted Solution**: Manual concatenation for 1-4 routes, "... and X more" pattern  
+**Issue**: Expression complexity and TextBlock HTML rendering limitations  
+**Resolution**: Display route count only; users reference Associations step for names
+
+**Technical Detail**: `map()` returns array; `concat()` cannot flatten to string in UI context
+
 ## Extension Points
 
 ### Configurable Prefix Pattern
@@ -454,17 +560,22 @@ To support different rulesets per route:
 2. Modify lambda to lookup `lambdaVariables('routeId')` in selection object
 3. Requires significant UI redesign for route-specific selection
 
-### Preview Generation
+### Enhanced Route List Display
 
-Add output variable to return processed rulesets without deployment:
+Current review step shows route count. To display individual route names:
 
-```json
-"outputs": {
-  "previewRuleSets": {
-    "type": "array",
-    "value": "[variables('processedRuleSets')]"
-  }
-}
-```
+**Option 1**: Static list for small counts (≤3 routes)
+- Manually build comma-separated string with nested `concat()` and `if()` expressions
+- Limitation: Expression length grows exponentially; impractical for >5 routes
 
-Deploy with `--no-execute` flag to generate preview.
+**Option 2**: Summary with truncation
+- Display first 2 route names + "... and X more" pattern
+- Implemented using `if(equals(length, 1), ..., if(equals(length, 2), ..., ...))`
+- Trade-off: Complexity vs. user value
+
+**Option 3**: Separate step/table view
+- Add dedicated sub-step with grid/table displaying all selected routes
+- Requires CreateUiDefinition schema support for table elements
+- Most scalable but increases navigation complexity
+
+**Current Implementation**: Route count only (simplicity, reliability, scalability)

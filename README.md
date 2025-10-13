@@ -49,12 +49,16 @@ The UI displays the current number of rulesets associated with each route. Only 
 - ✅ Case-insensitive matching for "Bilanciamento" prefix
 
 ## Workflow
-1. Choose subscription / resource group.  
-2. Select the Front Door profile and endpoint.  
-3. **Review the current ruleset associations** shown for each route in the dropdown.  
-4. Pick the Rule Set to associate (or `---` to remove any association).  
-5. Multi-select the routes that should receive that Rule Set.  
-6. Press **Review + create** → **Create**. The deployment runs in the background and updates every selected route.
+1. **Basics** - Choose subscription / resource group, select the Front Door profile and endpoint  
+2. **Associations** - Review the current ruleset associations shown for each route, pick the load balancing ruleset to associate (or `---` to remove), and multi-select the target routes  
+3. **Review Changes** - Preview the operation summary, impact details, and affected routes before deployment  
+4. Press **Create** - The deployment runs in the background and updates every selected route
+
+The **Review Changes** step shows:
+- **Operation summary**: What action will be performed (replace or remove)
+- **Routes affected**: Count of routes that will be modified
+- **Impact details**: What will be preserved and what will be changed
+- **Guidance**: Instructions for verifying changes after deployment
 
 ## Known issues / work-arounds
 
