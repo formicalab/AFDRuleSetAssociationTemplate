@@ -49,16 +49,48 @@ The UI displays the current number of rulesets associated with each route. Only 
 - ✅ Case-insensitive matching for "Bilanciamento" prefix
 
 ## Workflow
-1. **Basics** - Choose subscription / resource group, select the Front Door profile and endpoint  
-2. **Associations** - Review the current ruleset associations shown for each route, pick the load balancing ruleset to associate (or `---` to remove), and multi-select the target routes  
-3. **Review Changes** - Preview the operation summary, impact details, and affected routes before deployment  
-4. Press **Create** - The deployment runs in the background and updates every selected route
 
-The **Review Changes** step shows:
-- **Operation summary**: What action will be performed (replace or remove)
-- **Routes affected**: Count of routes that will be modified
-- **Impact details**: What will be preserved and what will be changed
-- **Guidance**: Instructions for verifying changes after deployment
+### Step 1: Basics
+- Choose subscription / resource group
+- Select the Front Door profile and endpoint (with hostname shown)
+- View statistics: how many routes have load balancing configured
+- **Empty endpoint warning**: If the endpoint has no routes, a warning is displayed
+
+### Step 2: Associations
+- **No Bilanciamento warning**: If profile has no load balancing rulesets, an info message explains only removal is possible
+- Pick the load balancing ruleset to associate (or `---` to remove)
+- **Selection confirmation**: Visual confirmation shows what was selected
+- Multi-select target routes with descriptions showing:
+  - Number of rulesets per route
+  - **(has load balancing)** indicator for routes with existing Bilanciamento rulesets
+
+### Step 3: Review Changes
+Preview before deployment with:
+- **Operation summary** with visual icons (🗑️ remove / 🔄 replace)
+- **Impact details**: What will be preserved vs. changed, with route count
+
+### Step 4: Final Confirmation
+The final Azure Portal confirmation page displays the complete list of affected route names before deployment execution.
+
+## UI Features
+
+The wizard includes several validation and feedback features:
+
+**Visual Indicators:**
+- 📊 Route statistics showing load balancing configuration overview
+- 🗑️ / 🔄 Operation type icons for quick identification
+- ⚠️ Warning messages for empty endpoints or edge cases
+- ℹ️ Informational guidance throughout the workflow
+
+**Context-Aware Descriptions:**
+- Endpoint hostnames displayed in dropdown
+- Route descriptions show ruleset count and load balancing status
+- Selection confirmations after each major choice
+
+**Validation:**
+- Empty endpoint detection
+- No load balancing rulesets detection
+- Clear messaging for edge cases
 
 ## Known issues / work-arounds
 

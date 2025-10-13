@@ -73,44 +73,153 @@ The UI workflow is organized into three steps:
 - `or()` short-circuits to include the sentinel `---` option
 - Result: Dropdown displays only Bilanciamento rulesets + removal option
 
+### UI Enhancement Features
+
+#### 1. Route Statistics Counter (Basics Step)
+```json
+{
+  "name": "loadBalancingStatistics",
+  "type": "Microsoft.Common.TextBlock",
+  "options": {
+    "text": "[concat('📊 <b>Route Statistics:</b> ', 
+      string(length(filter(steps('basics').afdRoutes.transformed.routeList, 
+        (r) => greater(length(filter(r.ruleSetIds, 
+          (rs) => startsWith(toLower(last(split(rs.id, '/'))), 'bilanciamento'))), 0)))), 
+      ' of ', string(length(steps('basics').afdRoutes.value)), 
+      ' routes have load balancing configured')]"
+  }
+}
+```
+
+**Implementation:**
+- Nested `filter()` operations to identify routes with Bilanciamento rulesets
+- Inner filter: checks each ruleset ID for "bilanciamento" prefix (case-insensitive)
+- Outer filter: includes routes where inner filter length > 0
+- Displays ratio: "X of Y routes have load balancing configured"
+
+**Benefits**: Provides immediate overview of current state before making changes
+
+#### 2. Empty Endpoint Validation
+```json
+{
+  "name": "noRoutesWarning",
+  "type": "Microsoft.Common.InfoBox",
+  "visible": "[equals(length(coalesce(steps('basics').afdRoutes.value, [])), 0)]",
+  "options": {
+    "style": "Warning",
+    "text": "⚠️ The selected endpoint has <b>no routes</b>..."
+  }
+}
+```
+
+**Implementation:**
+- `coalesce()` handles undefined/null API responses safely
+- `equals(length(), 0)` detects empty routes array
+- Warning-styled InfoBox for high visibility
+
+**Benefits**: Early validation prevents confusion when endpoint has no routes
+
+#### 3. Endpoint Hostname Descriptions
+```json
+"allowedValues": "[map(steps('basics').afdEndpoints.value, 
+  (item) => parse(concat('{\"label\":\"', item.name, 
+    '\",\"value\":\"', item.id, 
+    '\",\"description\":\"', item.properties.hostName, '\"}'))))]"
+```
+
+**Implementation:**
+- Adds `description` field to dropdown options
+- Extracts `hostName` from endpoint properties
+- Displays hostname under endpoint name for context
+
+**Benefits**: Helps distinguish endpoints with similar names
+
+#### 4. No Load Balancing Rulesets Warning (Associations Step)
+```json
+{
+  "name": "noLoadBalancingRulesetsInfo",
+  "type": "Microsoft.Common.InfoBox",
+  "visible": "[equals(length(filter(..., (item) => startsWith(toLower(item.label), 'bilanciamento'))), 0)]",
+  "options": {
+    "text": "ℹ️ No load balancing rulesets found..."
+  }
+}
+```
+
+**Implementation:**
+- Filters rulesets list for Bilanciamento prefix
+- Shows only when filter result is empty
+- Explains that only removal (`---`) is possible
+
+**Benefits**: Sets expectations in edge case scenarios
+
+#### 5. Route Description Enhancement
+```json
+"description": "[if(empty(item.ruleSetIds), 'No rulesets', 
+  if(greater(length(filter(item.ruleSetIds, 
+    (rs) => startsWith(toLower(last(split(rs.id, '/'))), 'bilanciamento'))), 0), 
+    concat(string(length(item.ruleSetIds)), ' rulesets (has load balancing)'), 
+    if(equals(length(item.ruleSetIds), 1), '1 ruleset', 
+      concat(string(length(item.ruleSetIds)), ' rulesets'))))]"
+```
+
+**Implementation:**
+- Three-level conditional logic
+- Checks for Bilanciamento presence using filter pattern
+- Adds "(has load balancing)" suffix when detected
+- Falls back to simple count when no load balancing
+
+**Benefits**: Users immediately see which routes have load balancing configured
+
+#### 6. Selection Confirmation Feedback
+```json
+{
+  "name": "currentSelectionSummary",
+  "type": "Microsoft.Common.TextBlock",
+  "visible": "[not(empty(steps('associations').ddRuleset))]",
+  "options": {
+    "text": "[concat('✓ <b>Selected:</b> ', 
+      if(equals(steps('associations').ddRuleset, '---'), 
+        'Remove all load balancing rulesets', 
+        concat('Replace with <b>', last(split(steps('associations').ddRuleset, '/')), '</b>')))]"
+  }
+}
+```
+
+**Implementation:**
+- Conditional visibility based on dropdown selection
+- `not(empty())` ensures display only after selection
+- Reuses operation logic from review step
+
+**Benefits**: Immediate visual confirmation reduces selection errors
+
 ### Review Step (Pre-Deployment Preview)
 
 The third step provides a comprehensive preview before deployment execution:
 
-#### 1. Operation Summary
+#### 1. Operation Summary with Visual Icons
 ```json
 {
   "name": "operationSummary",
   "type": "Microsoft.Common.TextBlock",
   "options": {
-    "text": "[concat('<b>Operation:</b> ', if(equals(steps('associations').ddRuleset, '---'), 
-      'Remove all load balancing rulesets', 
-      concat('Replace load balancing rulesets with <b>', last(split(steps('associations').ddRuleset, '/')), '</b>')))]"
+    "text": "[if(equals(steps('associations').ddRuleset, '---'), 
+      '🗑️ <b>Operation: REMOVE</b> all load balancing rulesets', 
+      concat('🔄 <b>Operation: REPLACE</b> load balancing rulesets with <b>', 
+        last(split(steps('associations').ddRuleset, '/')), '</b>'))]"
   }
 }
 ```
 
 **Implementation:**
+- Unicode emojis (🗑️/🔄) for visual distinction
 - Evaluates selected ruleset ID to determine operation type
 - Uses `last(split())` to extract ruleset name from Azure resource ID
 - Displays human-readable operation description
 
-#### 2. Routes Summary
-```json
-{
-  "name": "routesSummary",
-  "type": "Microsoft.Common.TextBlock",
-  "options": {
-    "text": "[concat('<b>Affected Routes:</b> ', string(length(steps('associations').selectedRoutes)), ' route(s) selected')]"
-  }
-}
-```
+**Benefits**: Visual icons improve scannability and quick comprehension
 
-**Implementation:**
-- Counts selected routes using `length()` function
-- Provides immediate feedback on deployment scope
-
-#### 3. Impact Summary
+#### 2. Impact Summary with Route Count
 ```json
 {
   "name": "impactSummary",
@@ -118,7 +227,7 @@ The third step provides a comprehensive preview before deployment execution:
   "visible": "[greater(length(steps('associations').selectedRoutes), 0)]",
   "options": {
     "style": "Warning",
-    "text": "[concat('<b>Impact:</b><ul><li><b>Preserved:</b> All non-load balancing rulesets...</li>...')]"
+    "text": "[concat('<b>Impact:</b><ul><li><b>Preserved:</b> All non-load balancing rulesets will remain in their current positions</li><li><b>Modified:</b> Load balancing rulesets will be ', if(equals(steps('associations').ddRuleset, '---'), 'removed', 'replaced in their current positions'), '</li><li><b>Routes affected:</b> ', string(length(steps('associations').selectedRoutes)), '. The list will be provided in the final page of this wizard</li></ul>')]"
   }
 }
 ```
@@ -127,13 +236,14 @@ The third step provides a comprehensive preview before deployment execution:
 - Warning-styled InfoBox highlights critical impact information
 - Conditional visibility ensures display only when routes are selected
 - Lists preserved vs. modified ruleset categories
-- Shows affected route count
+- Shows affected route count with hint about final confirmation page
+- Dynamic text based on operation type (remove vs. replace)
 
 **Benefits:**
 - **Validation**: Operator confirms intended changes before deployment
 - **Safety**: Visual preview reduces configuration errors
 - **Transparency**: Clear communication of operation scope and impact
-- **Guidance**: Post-deployment verification instructions
+- **Guidance**: Sets expectation that full route list appears on final Azure Portal confirmation page
 
 ## ARM Template Architecture (template.json)
 
@@ -439,6 +549,16 @@ Key function categories used in this implementation:
    - `if()` evaluates both branches before selection
    - Nested `if()` creates decision tree evaluated depth-first
 
+5. **Null Safety with coalesce()**
+   - UI Definition: Use `coalesce(value, [])` to handle undefined/null API responses
+   - Prevents runtime errors when API controls haven't loaded yet
+   - Example: `coalesce(steps('basics').afdRoutes.value, [])`
+
+6. **Nested Filter Pattern for Detection**
+   - Used extensively for Bilanciamento detection: `filter(rulesets, (rs) => startsWith(...))`
+   - Can be nested: `filter(routes, (r) => greater(length(filter(r.rulesets, ...)), 0))`
+   - Returns matching items; use `length() > 0` to check for existence
+
 ## Test Coverage Matrix
 
 | Test Case | Initial State | Operation | Expected Result | Validates |
@@ -505,32 +625,51 @@ Key function categories used in this implementation:
 
 ## UI/UX Design Considerations
 
-### Review Step Architecture
+### Three-Step Workflow Structure
 
-The review step implements a three-tier information hierarchy:
+**Step 1: Basics**
+- Endpoint descriptions display hostnames for context
+- Empty endpoint warnings prevent invalid selections
+- Route statistics show overview: "X of Y routes have load balancing configured"
+
+**Step 2: Associations**
+- No Bilanciamento rulesets warning handles edge cases
+- Route descriptions indicate load balancing status
+- Selection confirmation displays current choice
+
+**Step 3: Review Changes**
+- Operation icons (🗑️/🔄) provide visual identification
+- Impact summary warns about changes
+- Route count references final confirmation page
+
+### Review Step Information Hierarchy
+
+The review step uses a three-tier structure:
 
 1. **Informational Context** (Blue InfoBox)
    - Purpose: Orient the user to the review phase
    - Content: General guidance about reviewing changes
 
-2. **Operation Details** (TextBlocks)
-   - Purpose: Communicate specific operation parameters
-   - Content: Operation type, selected ruleset name, affected route count
-   - Format: Bold labels with dynamic values
+2. **Operation Details with Visual Icons** (TextBlock)
+   - Purpose: Communicate specific operation type at a glance
+   - Content: Operation icon (🗑️ remove / 🔄 replace) + selected ruleset name
+   - Format: Bold labels with Unicode emojis for visual distinction
+   - Hint: Reference to final page for complete route list
 
 3. **Impact Warning** (Yellow InfoBox)
    - Purpose: Highlight critical impact information requiring attention
-   - Content: Preservation guarantees, modification scope, affected resource count
+   - Content: Preservation guarantees, modification scope, affected route count
    - Style: Warning-level visual emphasis
+   - Route list hint: Explains full list appears on final Azure Portal confirmation page
 
 4. **Post-Deployment Guidance** (Blue InfoBox)
    - Purpose: Set expectations for validation
    - Content: Instructions for verifying changes in Azure Portal
 
-**Design Rationale:**
-- Progressive disclosure: Summary → Details → Impact → Next steps
-- Visual hierarchy through InfoBox styling (Info/Warning) and TextBlock formatting
-- Conditional rendering ensures relevance (impact shown only when routes selected)
+**Design Characteristics:**
+- Visual hierarchy: InfoBox styling (Info/Warning), TextBlock formatting, Unicode icons (🗑️/🔄/📊/⚠️/ℹ️)
+- Conditional visibility: Elements appear only when applicable (e.g., warnings for empty endpoints)
+- Contextual feedback: Confirmation messages after selections, statistics before changes
 
 ### Expression Language Limitations
 
