@@ -45,6 +45,12 @@
         "route_forwardingProto": { "type": "array" },
         "route_enabledState": { "type": "array" },
         "route_cacheConfig": { "type": "array" },
+        "route_currentRuleSets": {
+            "type": "array",
+            "metadata": {
+                "description": "Current ruleset associations for each route (array of arrays)"
+            }
+        },
         "all_route_ids": {
             "type": "array",
             "metadata": {
@@ -54,7 +60,8 @@
     },
     "variables": {
         "afd_profile_name": "[last(split(parameters('afd_profile_id'), '/'))]",
-        "afd_endpoint_name": "[last(split(parameters('afd_endpoint_id'), '/'))]"
+        "afd_endpoint_name": "[last(split(parameters('afd_endpoint_id'), '/'))]",
+        "processedRuleSets": "[map(parameters('selected_routes'), lambda('routeId', if(equals(parameters('selected_ruleset_id'), '---'), filter(parameters('route_currentRuleSets')[indexOf(parameters('all_route_ids'), lambdaVariables('routeId'))], lambda('rs', not(startsWith(last(split(lambdaVariables('rs').id, '/')), 'Bilanciamento')))), if(greater(length(filter(parameters('route_currentRuleSets')[indexOf(parameters('all_route_ids'), lambdaVariables('routeId'))], lambda('rs', startsWith(last(split(lambdaVariables('rs').id, '/')), 'Bilanciamento')))), 0), map(parameters('route_currentRuleSets')[indexOf(parameters('all_route_ids'), lambdaVariables('routeId'))], lambda('rs', if(startsWith(last(split(lambdaVariables('rs').id, '/')), 'Bilanciamento'), createObject('id', parameters('selected_ruleset_id')), lambdaVariables('rs')))), concat(parameters('route_currentRuleSets')[indexOf(parameters('all_route_ids'), lambdaVariables('routeId'))], array(createObject('id', parameters('selected_ruleset_id'))))))))]"
     },
     "resources": [
         {
@@ -86,7 +93,7 @@
                 "forwardingProtocol": "[parameters('route_forwardingProto')[indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()]) ]]",
                 "enabledState": "[parameters('route_enabledState')[  indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()]) ]]",
                 "cacheConfiguration": "[parameters('route_cacheConfig')[indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()])].cacheConfiguration]",
-                "ruleSets": "[if(equals(parameters('selected_ruleset_id'), '---'), json('[]'), array(createObject('id', parameters('selected_ruleset_id'))))]"
+                "ruleSets": "[variables('processedRuleSets')[copyIndex()]]"
             }
         }
     ]

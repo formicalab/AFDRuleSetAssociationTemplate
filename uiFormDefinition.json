@@ -58,7 +58,7 @@
                         {
                             "name": "afdEndpointSelector",
                             "type": "Microsoft.Common.DropDown",
-                            "label": "Endpoint",
+                            "label": "Select the desired endpoint in the above FrontDoor",
                             "filter": true,
                             "constraints": {
                                 "allowedValues": "[map(steps('basics').afdEndpoints.value, (item) => parse(concat('{\"label\":\"', item.name, '\",\"value\":\"', item.id, '\"}')))]",
@@ -81,7 +81,8 @@
                                 "method": "GET",
                                 "path": "[concat(steps('basics').afdProfile.id, '/ruleSets?api-version=2025-04-15')]",
                                 "transforms": {
-                                    "list": "[value|[*].{label:name, value:id},[{label: '---', value: '---'}]][]"
+                                    "list": "value|[*].{label:name, value:id}",
+                                    "listWithRemove": "[value|[*].{label:name, value:id}, [{label: '---', value: '---'}]][]"
                                 }
                             }
                         },
@@ -93,6 +94,7 @@
                                 "path": "[concat(steps('basics').afdEndpoint.id, '/routes?api-version=2025-04-15')]",
                                 "transforms": {
                                     "routeList": "[value|[*].{label:name, value:id, ruleSetIds:properties.ruleSets}][]",
+                                    "currentRuleSets": "[value|[*].properties.ruleSets][]",
                                     "originGroups": "[value|[*].properties.originGroup.id][]",
                                     "customDomains": "[value|[*].properties.customDomains][]",
                                     "patterns": "[value|[*].properties.patternsToMatch][]",
@@ -116,25 +118,26 @@
                             "type": "Microsoft.Common.InfoBox",
                             "visible": true,
                             "options": {
-                                "style": "Warning",
-                                "text": "IMPORTANT: This operation will REPLACE all existing ruleset associations on the selected routes.\n\nIf a route currently has multiple rulesets, they will ALL be removed and replaced with only the ruleset you select below; in this case, consider deselecting the route and apply changes manually from the Azure Portal."
+                                "style": "Info",
+                                "text": "This operation will manage the association of ruleset used for load balancing (names start with <b>Bilanciamento</b>) for the selected routes.\n\n<b><u>Choices:</u></b>\n• Select a load balancing ruleset: all existing load balancing rulesets will be removed and replaced with your selection. Other rulesets will be preserved.\n• Select '---': all load balancing rulesets will be removed. Other rulesets will be preserved."
                             }
                         },
                         {
                             "name": "ddRuleset",
                             "type": "Microsoft.Common.DropDown",
-                            "label": "RuleSet to associate (will REPLACE all existing rulesets); select '---' to remove all:",
+                            "label": "Select a load balancing ruleset to associate or '---' to remove load balancing rulesets associated to the routes:",
+                            "placeholder": "Only load balancing rulesets are shown",
                             "filter": true,
                             "filterPlaceholder": "Filter items ...",
                             "constraints": {
                                 "required": true,
-                                "allowedValues": "[steps('basics').afdRuleSets.transformed.list]"
+                                "allowedValues": "[filter(steps('basics').afdRuleSets.transformed.listWithRemove, (item) => or(equals(item.value, '---'), startsWith(toLower(item.label), 'bilanciamento')))]"
                             }
                         },
                         {
                             "name": "selectedRoutes",
                             "type": "Microsoft.Common.DropDown",
-                            "label": "Select Routes to Associate RuleSets",
+                            "label": "Select Routes to associate RuleSets",
                             "multiselect": true,
                             "selectAll": true,
                             "filter": true,
@@ -142,7 +145,7 @@
                             "multiLine": true,
                             "defaultDescription": "No ruleset associated",
                             "constraints": {
-                                "allowedValues": "[map(steps('basics').afdRoutes.transformed.routeList, (item) => parse(concat('{\"label\":\"', item.label, '\",\"value\":\"', item.value, '\",\"description\":\"', if(empty(item.ruleSetIds), 'No rulesets', if(greater(length(item.ruleSetIds), 1), concat('⚠️ ', string(length(item.ruleSetIds)), ' rulesets'), concat(string(length(item.ruleSetIds)), ' ruleset'))), '\"}')))]",
+                                "allowedValues": "[map(steps('basics').afdRoutes.transformed.routeList, (item) => parse(concat('{\"label\":\"', item.label, '\",\"value\":\"', item.value, '\",\"description\":\"', if(empty(item.ruleSetIds), 'No rulesets', if(equals(length(item.ruleSetIds), 1), '1 ruleset', concat(string(length(item.ruleSetIds)), ' rulesets'))), '\"}')))]",
                                 "required": true
                             },
                             "visible": true
@@ -166,6 +169,7 @@
                 "route_forwardingProto": "[steps('basics').afdRoutes.transformed.forwardingProtocol]",
                 "route_enabledState": "[steps('basics').afdRoutes.transformed.enabledState]",
                 "route_cacheConfig": "[steps('basics').afdRoutes.transformed.cacheConfiguration]",
+                "route_currentRuleSets": "[steps('basics').afdRoutes.transformed.currentRuleSets]",
                 "all_route_ids": "[steps('basics').afdRoutes.transformed.routeIds]"
             },
             "kind": "ResourceGroup",
