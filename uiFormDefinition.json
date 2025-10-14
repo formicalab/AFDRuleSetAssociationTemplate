@@ -15,7 +15,7 @@
                             "visible": true,
                             "options": {
                                 "style": "Info",
-                                "text": "[concat('Use this template to modify ruleset associations for <ul><li>FrontDoor profile: <b>', steps('basics').afdProfileSelector.name, '</b> (sku: ', steps('basics').afdProfile.sku.name, ')</li><li>Endpoint: <b>', steps('basics').afdEndpoint.name, '</b> (hostName: ', steps('basics').afdEndpoint.properties.hostName, ')</li><li>Routes: <b>', string(length(steps('basics').afdRoutes.transformed.routeIds)),  '</b></li><li>Available rulesets: <b>', string(length(steps('basics').afdRuleSets.value))  ,'</b></li></ul>')]"
+                                "text": "[concat('Use this template to modify ruleset associations for <ul><li>FrontDoor profile: <b>', steps('basics').afdProfileSelector.name, '</b> (sku: ', steps('basics').afdProfile.sku.name, ')</li><li>Endpoint: <b>', steps('basics').afdEndpoint.name, '</b> (hostName: ', steps('basics').afdEndpoint.properties.hostName, ')</li><li>📊 <b>Routes:</b> ', string(length(filter(steps('basics').afdRoutes.transformed.routeList, (r) => greater(length(filter(r.ruleSetIds, (rs) => startsWith(toLower(last(split(rs.id, '/'))), 'bilanciamento'))), 0)))), ' of ', string(length(steps('basics').afdRoutes.value)), ' have load balancing rulesets configured</li><li>📊 <b>Available rulesets:</b> ', string(length(filter(steps('basics').afdRuleSets.value, (item) => startsWith(toLower(item.name), 'bilanciamento')))), ' load balancing of <b>', string(length(steps('basics').afdRuleSets.value)), '</b> total</li></ul>')]"
                             }
                         },
                         {
@@ -115,14 +115,6 @@
                                     "routeIds": "[value|[*].id][]"
                                 }
                             }
-                        },
-                        {
-                            "name": "loadBalancingStatistics",
-                            "type": "Microsoft.Common.TextBlock",
-                            "visible": true,
-                            "options": {
-                                "text": "[concat('📊 <b>Route Statistics:</b> ', string(length(filter(steps('basics').afdRoutes.transformed.routeList, (r) => greater(length(filter(r.ruleSetIds, (rs) => startsWith(toLower(last(split(rs.id, '/'))), 'bilanciamento'))), 0)))), ' of ', string(length(steps('basics').afdRoutes.value)), ' routes have load balancing rulesets configured')]"
-                            }
                         }
                     ]
                 },
@@ -140,12 +132,21 @@
                             }
                         },
                         {
+                            "name": "noLoadBalancingRoutesWarning",
+                            "type": "Microsoft.Common.InfoBox",
+                            "visible": "[equals(length(filter(steps('basics').afdRoutes.transformed.routeList, (item) => greater(length(filter(item.ruleSetIds, (rs) => startsWith(toLower(last(split(rs.id, '/'))), 'bilanciamento'))), 0))), 0)]",
+                            "options": {
+                                "style": "Warning",
+                                "text": "No routes currently have load balancing rulesets associated. You must first associate load balancing rulesets to routes before using this template. Only routes with existing load balancing rulesets can be modified."
+                            }
+                        },
+                        {
                             "name": "warningMessage",
                             "type": "Microsoft.Common.InfoBox",
                             "visible": true,
                             "options": {
                                 "style": "Info",
-                                "text": "This operation will manage the association of rulesets used for load balancing (names start with <b>Bilanciamento</b>) for the selected routes.<br/><br/><b>Choices:</b><br/>• Select a load balancing ruleset: all existing load balancing rulesets will be removed and replaced with your selection. Other rulesets will be preserved.<br/>• Select '---': all load balancing rulesets will be removed. Other rulesets will be preserved."
+                                "text": "[concat('📊 <b>Routes:</b> ', string(length(filter(steps('basics').afdRoutes.transformed.routeList, (r) => greater(length(filter(r.ruleSetIds, (rs) => startsWith(toLower(last(split(rs.id, '/'))), 'bilanciamento'))), 0)))), ' of ', string(length(steps('basics').afdRoutes.value)), ' have load balancing rulesets configured<br/>📊 <b>Available rulesets:</b> ', string(length(filter(steps('basics').afdRuleSets.value, (item) => startsWith(toLower(item.name), 'bilanciamento')))), ' load balancing of ', string(length(steps('basics').afdRuleSets.value)), ' total<br/><br/>This operation will manage load balancing rulesets (names start with <b>Bilanciamento</b>) for routes that already have them configured.<br/><br/><b>Choices:</b><br/>• Select a load balancing ruleset: existing load balancing rulesets will be replaced with your selection. Other rulesets will be preserved.<br/>• Select \\'---\\': all load balancing rulesets will be removed. Other rulesets will be preserved.<br/><br/><b>Note:</b> Only routes with existing load balancing rulesets are shown in the dropdown below.')]"
                             }
                         },
                         {
@@ -177,9 +178,9 @@
                             "filter": true,
                             "filterPlaceholder": "Filter items ...",
                             "multiLine": true,
-                            "defaultDescription": "No ruleset associated",
+                            "defaultDescription": "Route with load balancing",
                             "constraints": {
-                                "allowedValues": "[map(steps('basics').afdRoutes.transformed.routeList, (item) => parse(concat('{\"label\":\"', item.label, '\",\"value\":\"', item.value, '\",\"description\":\"', if(empty(item.ruleSetIds), 'No rulesets', if(greater(length(filter(item.ruleSetIds, (rs) => startsWith(toLower(last(split(rs.id, '/'))), 'bilanciamento'))), 0), concat(string(length(item.ruleSetIds)), ' rulesets (has load balancing)'), if(equals(length(item.ruleSetIds), 1), '1 ruleset', concat(string(length(item.ruleSetIds)), ' rulesets')))), '\"}')))]",
+                                "allowedValues": "[map(filter(steps('basics').afdRoutes.transformed.routeList, (item) => greater(length(filter(item.ruleSetIds, (rs) => startsWith(toLower(last(split(rs.id, '/'))), 'bilanciamento'))), 0)), (item) => parse(concat('{\"label\":\"', item.label, '\",\"value\":\"', item.value, '\",\"description\":\"', concat(string(length(item.ruleSetIds)), ' rulesets (has load balancing)'), '\"}')))]",
                                 "required": true
                             },
                             "visible": true
@@ -213,7 +214,7 @@
                             "visible": "[greater(length(steps('associations').selectedRoutes), 0)]",
                             "options": {
                                 "style": "Warning",
-                                "text": "[concat('<b>Impact:</b><ul><li><b>Preserved:</b> All non-load balancing rulesets will remain in their current positions</li><li><b>Modified:</b> Load balancing rulesets will be ', if(equals(steps('associations').ddRuleset, '---'), 'removed', 'replaced in their current positions'), '</li><li><b>Routes affected:</b> ', string(length(steps('associations').selectedRoutes)), '. The list will be provided in the final page of this wizard</li></ul>')]"
+                                "text": "[concat('<b>Impact:</b><ul><li><b>Preserved:</b> All non-load balancing rulesets will remain in their current positions</li><li><b>Modified:</b> Load balancing rulesets will be ', if(equals(steps('associations').ddRuleset, '---'), 'removed', 'replaced in their current positions'), '</li><li><b>Routes affected:</b> ', if(startsWith(string(steps('associations').selectedRoutes), '['), string(length(steps('associations').selectedRoutes)), '1'), '. The list will be provided in the final page of this wizard</li></ul>')]"
                             }
                         },
                         {
@@ -235,7 +236,7 @@
                 "afd_profile_id": "[steps('basics').afdProfile.id]",
                 "afd_endpoint_id": "[steps('basics').afdEndpoint.id]",
                 "selected_ruleset_id": "[steps('associations').ddRuleset]",
-                "selected_routes": "[steps('associations').selectedRoutes]",
+                "selected_routes": "[if(startsWith(string(steps('associations').selectedRoutes), '['), steps('associations').selectedRoutes, parse(concat('[\"', steps('associations').selectedRoutes, '\"]')))]",
                 "route_originGroups": "[steps('basics').afdRoutes.transformed.originGroups]",
                 "route_customDomains": "[steps('basics').afdRoutes.transformed.customDomains]",
                 "route_patterns": "[steps('basics').afdRoutes.transformed.patterns]",
