@@ -38,19 +38,60 @@
                 "description": "The list of origin groups for the routes"
             }
         },
+        "route_originPath": {
+            "type": "array",
+            "metadata": {
+                "description": "Origin path for each route"
+            }
+        },
         "route_customDomains": {
             "type": "array",
             "metadata": {
                 "description": "The list of custom domains for the routes"
             }
         },
-        "route_patterns": { "type": "array" },
-        "route_protocols": { "type": "array" },
-        "route_httpsRedirect": { "type": "array" },
-        "route_forwardingProto": { "type": "array" },
-        "route_enabledState": { "type": "array" },
-        "route_linkToDefaultDomain": { "type": "array" },
-        "route_cacheConfig": { "type": "array" },
+        "route_patterns": {
+            "type": "array",
+            "metadata": {
+                "description": "Patterns to match for each route"
+            }
+        },
+        "route_protocols": {
+            "type": "array",
+            "metadata": {
+                "description": "Supported protocols for each route"
+            }
+        },
+        "route_httpsRedirect": {
+            "type": "array",
+            "metadata": {
+                "description": "HTTPS redirect settings for each route"
+            }
+        },
+        "route_forwardingProto": {
+            "type": "array",
+            "metadata": {
+                "description": "Forwarding protocol for each route"
+            }
+        },
+        "route_enabledState": {
+            "type": "array",
+            "metadata": {
+                "description": "Enabled state for each route"
+            }
+        },
+        "route_linkToDefaultDomain": {
+            "type": "array",
+            "metadata": {
+                "description": "Link to default domain setting for each route"
+            }
+        },
+        "route_cacheConfig": {
+            "type": "array",
+            "metadata": {
+                "description": "Cache configuration for each route"
+            }
+        },
         "route_currentRuleSets": {
             "type": "array",
             "metadata": {
@@ -68,12 +109,9 @@
         "afd_profile_name": "[last(split(parameters('afd_profile_id'), '/'))]",
         "afd_endpoint_name": "[last(split(parameters('afd_endpoint_id'), '/'))]",
         
-        "filtered_route_indexes": "[filter(range(0, length(parameters('all_route_ids'))), lambda('i', startsWith(parameters('route_names')[lambdaVariables('i')], 'route-to-')))]",
-        "filtered_route_ids": "[map(variables('filtered_route_indexes'), lambda('i', parameters('all_route_ids')[lambdaVariables('i')]))]",
+        "route_identifiers": "[map(range(0, length(parameters('route_names'))), lambda('i', if(equals(parameters('route_names')[lambdaVariables('i')], 'route-to-azure'), 'Azure', if(equals(parameters('route_names')[lambdaVariables('i')], 'route-to-onprem'), 'OnPrem', concat(toUpper(substring(parameters('route_names')[lambdaVariables('i')], 9, 1)), substring(parameters('route_names')[lambdaVariables('i')], 10))))))]",
         
-        "route_identifiers": "[map(variables('filtered_route_indexes'), lambda('i', if(equals(parameters('route_names')[lambdaVariables('i')], 'route-to-azure'), 'Azure', if(equals(parameters('route_names')[lambdaVariables('i')], 'route-to-onprem'), 'OnPrem', concat(toUpper(substring(parameters('route_names')[lambdaVariables('i')], 9, 1)), substring(parameters('route_names')[lambdaVariables('i')], 10))))))]",
-        
-        "processedRuleSets": "[map(variables('filtered_route_indexes'), lambda('routeIdx', map(parameters('route_currentRuleSets')[lambdaVariables('routeIdx')], lambda('rs', if(startsWith(last(split(lambdaVariables('rs').id, '/')), 'Bilanciamento'), createObject('id', first(map(filter(parameters('afd_rulesets'), lambda('ruleset', equals(toLower(lambdaVariables('ruleset').name), toLower(concat('Bilanciamento', variables('route_identifiers')[indexOf(variables('filtered_route_indexes'), lambdaVariables('routeIdx'))], parameters('selected_load_balancing')))))), lambda('ruleset', lambdaVariables('ruleset').id)))), lambdaVariables('rs'))))))]"
+        "processedRuleSets": "[map(range(0, length(parameters('route_names'))), lambda('i', map(parameters('route_currentRuleSets')[lambdaVariables('i')], lambda('rs', if(startsWith(last(split(lambdaVariables('rs').id, '/')), 'Bilanciamento'), createObject('id', first(map(filter(parameters('afd_rulesets'), lambda('ruleset', equals(toLower(lambdaVariables('ruleset').name), toLower(concat('Bilanciamento', variables('route_identifiers')[lambdaVariables('i')], parameters('selected_load_balancing')))))), lambda('ruleset', lambdaVariables('ruleset').id)))), lambdaVariables('rs'))))))]"
     },
     "resources": [
         {
@@ -85,26 +123,27 @@
         {
             "type": "Microsoft.Cdn/profiles/afdendpoints/routes",
             "apiVersion": "2025-04-15",
-            "name": "[concat(variables('afd_profile_name'), '/', variables('afd_endpoint_name'), '/', last(split(variables('filtered_route_ids')[copyIndex()], '/')))]",
+            "name": "[concat(variables('afd_profile_name'), '/', variables('afd_endpoint_name'), '/', last(split(parameters('all_route_ids')[copyIndex()], '/')))]",
             "copy": {
                 "name": "routeAssociationLoop",
-                "count": "[length(variables('filtered_route_ids'))]"
+                "count": "[length(parameters('all_route_ids'))]"
             },
             "dependsOn": [
                 "[resourceId('Microsoft.Cdn/profiles/afdendpoints', variables('afd_profile_name'), variables('afd_endpoint_name'))]"
             ],
             "properties": {
                 "originGroup": {
-                    "id": "[parameters('route_originGroups')[variables('filtered_route_indexes')[copyIndex()]]]"
+                    "id": "[parameters('route_originGroups')[copyIndex()]]"
                 },
-                "customDomains": "[parameters('route_customDomains')[variables('filtered_route_indexes')[copyIndex()]]]",
-                "patternsToMatch": "[parameters('route_patterns')[variables('filtered_route_indexes')[copyIndex()]]]",
-                "supportedProtocols": "[parameters('route_protocols')[variables('filtered_route_indexes')[copyIndex()]]]",
-                "httpsRedirect": "[parameters('route_httpsRedirect')[variables('filtered_route_indexes')[copyIndex()]]]",
-                "forwardingProtocol": "[parameters('route_forwardingProto')[variables('filtered_route_indexes')[copyIndex()]]]",
-                "enabledState": "[parameters('route_enabledState')[variables('filtered_route_indexes')[copyIndex()]]]",
-                "linkToDefaultDomain": "[parameters('route_linkToDefaultDomain')[variables('filtered_route_indexes')[copyIndex()]]]",
-                "cacheConfiguration": "[parameters('route_cacheConfig')[variables('filtered_route_indexes')[copyIndex()]].cacheConfiguration]",
+                "originPath": "[parameters('route_originPath')[copyIndex()]]",
+                "customDomains": "[parameters('route_customDomains')[copyIndex()]]",
+                "patternsToMatch": "[parameters('route_patterns')[copyIndex()]]",
+                "supportedProtocols": "[parameters('route_protocols')[copyIndex()]]",
+                "httpsRedirect": "[parameters('route_httpsRedirect')[copyIndex()]]",
+                "forwardingProtocol": "[parameters('route_forwardingProto')[copyIndex()]]",
+                "enabledState": "[parameters('route_enabledState')[copyIndex()]]",
+                "linkToDefaultDomain": "[parameters('route_linkToDefaultDomain')[copyIndex()]]",
+                "cacheConfiguration": "[parameters('route_cacheConfig')[copyIndex()]]",
                 "ruleSets": "[variables('processedRuleSets')[copyIndex()]]"
             }
         }
