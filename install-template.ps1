@@ -3,7 +3,7 @@ using module Az.Resources
 
 $templateSpecRG = "rg-templates-itn-001"
 $templateSpecName = "ts-afd-itn-001"
-$templateSpecVersion = "1.6.0"
+$templateSpecVersion = "2.0.0"
 $templateSpecLocation = "italynorth"
 $templateSpecDisplayName = "FrontDoor RuleSet"
 $templateSpecDescription = "Associate RuleSet to AFD Rules"

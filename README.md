@@ -1,126 +1,193 @@
-# Front Door RuleSet Association Template
+# Azure Front Door Load Balancing Template
 
-This project contains:
+This ARM template automates percentage-based load balancing configuration for Azure Front Door Premium routes. It enables operators to quickly adjust traffic distribution between Site A and Site B by applying pre-configured rulesets to routes following a specific naming pattern.
 
-* **template.json** – an ARM template that manages the RuleSets used for load balancing (recognized from their names starting with "Bilanciamento*") in Azure Front Door (Std/Premium), allowing their associations with one or more existing routes on an endpoint.  
-  Only the load balancing ruleset associations are modified; all other route properties (origin group, custom domains, patterns, protocols, cache settings, …) and other rulesets are preserved.
+## Overview
 
-* **uiFormDefinition.json** – the "Create UI" definition that drives the portal experience.  
-  It lets the operator pick the Front Door profile, endpoint, a Bilanciamento ruleset (or `---` to remove all load balancing rulesets) and the routes to update.  
-  **New filtering**: Only routes that already have load balancing rulesets are shown for selection.  
-  When **Deploy** is pressed, the UI serializes the selection into parameters and calls **template.json**.
+The template consists of:
 
-## ℹ️ Selective Bilanciamento RuleSet Management
+- **template.json** – ARM deployment template that updates route ruleset associations
+- **uiFormDefinition.json** – Azure Portal UI definition for guided configuration
+- **install-template.ps1** / **install-template.sh** – Deployment scripts for Template Spec registration
 
-**This template manages ONLY load balancing ("Bilanciamento*") rulesets while preserving all other ruleset associations.**
+## Key Concepts
 
-### How it works:
+### Route Naming Pattern
 
-- **Select a "Bilanciamento" ruleset**: 
-  - All existing rulesets starting with "Bilanciamento" will be **replaced** with the selected ruleset
-  - The new ruleset is placed at the **same position** as the original Bilanciamento ruleset
-  - If no Bilanciamento ruleset exists, the new one is **added at the end**
-  - All other rulesets are **preserved** in their original positions
+Only routes matching the format `route-to-<identifier>` are processed by this template.
 
-- **Select `---`**: 
-  - All existing rulesets starting with "Bilanciamento" will be **removed**
-  - All other rulesets are **preserved** in their original positions
+**Examples:**
+- `route-to-azure`
+- `route-to-onprem`
+- `route-to-webapp`
 
-### Examples:
+The `<identifier>` portion (e.g., `azure`, `onprem`) is extracted and used to match the corresponding load balancing ruleset.
 
-**Example 1**: Route has ["SecurityRules", "Bilanciamento-v1", "CachingRules"]
-- Select "Bilanciamento-v2" → Result: ["SecurityRules", "Bilanciamento-v2", "CachingRules"] ← **Position preserved**
-- Select "---" → Result: ["SecurityRules", "CachingRules"]
+### Ruleset Naming Convention
 
-**Example 2**: Route has ["CdnRules", "CompressionRules"] (no Bilanciamento)
-- Select "Bilanciamento-new" → Result: ["CdnRules", "CompressionRules", "Bilanciamento-new"] ← **Added at end**
-- Select "---" → Result: ["CdnRules", "CompressionRules"] (no change)
+Load balancing rulesets must follow the format: `Bilanciamento<Identifier>SiteA<a>SiteB<b>`
 
-**Example 3**: Multiple routes with different positions
-- Route A: ["Rule1", "Bilanciamento-old", "Rule3"] → Result: ["Rule1", "Bilanciamento-new", "Rule3"]
-- Route B: ["Rule1", "Rule2", "Rule3", "Bilanciamento-old"] → Result: ["Rule1", "Rule2", "Rule3", "Bilanciamento-new"]
-- **Each route preserves its Bilanciamento position independently**
+Where:
+- `<Identifier>` = Capitalized route identifier (e.g., `Azure`, `OnPrem`)
+- `<a>` = Percentage of traffic to Site A (0-100)
+- `<b>` = Percentage of traffic to Site B (0-100)
 
-The UI displays the current number of rulesets associated with each route. Only Bilanciamento rulesets (plus the `---` option) are shown in the selection dropdown.
+**Examples:**
+- `BilanciamentoAzureSiteA30SiteB70` → 30% to Site A, 70% to Site B
+- `BilanciamentoOnPremSiteA50SiteB50` → 50% to Site A, 50% to Site B
+- `BilanciamentoAzureSiteA100SiteB0` → 100% to Site A, 0% to Site B
 
-**Key Features:**
-- ✅ Preserves the position of Bilanciamento rulesets when replacing
-- ✅ Handles multiple routes with different ruleset orders
-- ✅ Safely manages routes with multiple ruleset associations
-- ✅ Case-insensitive matching for "Bilanciamento" prefix
+### How It Works
 
-## Workflow
+1. **Route Discovery**: The UI automatically discovers all routes matching `route-to-*` pattern from the selected Front Door endpoint
+2. **Percentage Selection**: Operator chooses a traffic distribution percentage from 11 predefined options (0/100, 10/90, 20/80, ..., 100/0)
+3. **Ruleset Validation**: The UI checks if required rulesets exist for each route identifier and blocks deployment if any are missing
+4. **Ruleset Replacement**: The template locates existing `Bilanciamento*` rulesets associated with each route and replaces them with the new percentage-based ruleset **in the same position**
+5. **Property Preservation**: All other route properties (origin groups, custom domains, patterns, protocols, cache configuration, etc.) and non-Bilanciamento rulesets remain unchanged
 
-### Step 1: Basics
-- Choose subscription / resource group
-- Select the Front Door profile and endpoint (with hostname shown)
-- Enhanced statistics display:
-  - 📊 **Routes**: Shows how many routes have load balancing rulesets configured (e.g., "2 of 52 have load balancing rulesets configured")
-  - 📊 **Available rulesets**: Shows load balancing ruleset count and total (e.g., "2 load balancing of 5 total")
-- **Empty endpoint warning**: If the endpoint has no routes, a warning is displayed
-- **No load balancing routes warning**: If no routes have load balancing rulesets, a specific warning is shown
+## Deployment Workflow
 
-### Step 2: Associations
-- **Enhanced context**: Same statistics from Step 1 are repeated for reference
-- **No Bilanciamento warning**: If profile has no load balancing rulesets, an info message explains only removal is possible
-- **Filtered route selection**: Only routes with existing load balancing rulesets are shown in the dropdown
-- Pick the load balancing ruleset to associate (or `---` to remove)
-- **Selection confirmation**: Visual confirmation shows what was selected
-- Multi-select target routes with descriptions showing:
-  - Number of rulesets per route
-  - **(has load balancing)** indicator (now redundant since all shown routes have this)
+### Prerequisites
 
-### Step 3: Review Changes
-Preview before deployment with:
-- **Operation summary** with visual icons (🗑️ remove / 🔄 replace)
-- **Impact details**: What will be preserved vs. changed, with accurate route count display
-- **Fixed count display**: Shows correct number of routes (e.g., "1" instead of character count)
+Before using this template, ensure:
+- Load balancing rulesets are created in Azure Front Door with the correct naming format
+- Routes are named following the `route-to-<identifier>` pattern
+- Each route identifier has a corresponding set of percentage-based rulesets (e.g., BilanciamentoAzureSiteA0SiteB100, BilanciamentoAzureSiteA10SiteB90, etc.)
 
-### Step 4: Final Confirmation
-The final Azure Portal confirmation page displays the complete list of affected route names before deployment execution.
+### Using the Azure Portal UI
 
-## UI Features
+1. **Basics Step**
+   - Select subscription and resource group
+   - Choose the Azure Front Door profile
+   - Select the endpoint
+   - View summary: Number of `route-to-*` routes and available Bilanciamento rulesets
 
-The wizard includes several validation and feedback features:
+2. **Load Balancing Step**
+   - Select percentage distribution from dropdown (e.g., "SiteA30SiteB70")
+   - View current selection summary showing:
+     - Which routes will be updated (e.g., `route-to-azure`, `route-to-onprem`)
+     - Which rulesets will be applied to each route
+   - **Validation**: If required rulesets don't exist, an error message appears and deployment is blocked
 
-**Visual Indicators:**
-- 📊 Route statistics showing load balancing configuration overview
-- 🗑️ / 🔄 Operation type icons for quick identification
-- ⚠️ Warning messages for empty endpoints or edge cases
-- ℹ️ Informational guidance throughout the workflow
+3. **Deploy**
+   - Review configuration
+   - Click "Create" to apply changes
 
-**Context-Aware Descriptions:**
-- Endpoint hostnames displayed in dropdown
-- Route descriptions show ruleset count and load balancing status
-- Selection confirmations after each major choice
+### Using Template Spec
 
-**Validation:**
-- Empty endpoint detection
-- No load balancing rulesets detection
-- Clear messaging for edge cases
+Deploy the template as a Template Spec for reusable configurations:
+
+```powershell
+# PowerShell
+.\install-template.ps1
+```
+
+```bash
+# Bash
+./install-template.sh
+```
+
+The scripts will create/update Template Spec: `ts-afd-itn-001` version `2.0.0`
+
+## Technical Details
+
+### UI Features
+
+**Smart Validation:**
+- Case-insensitive ruleset matching
+- Pre-deployment checks for required rulesets
+- Automatic filtering of routes by naming pattern
+
+**Visual Feedback:**
+- Route count statistics
+- Real-time mapping display (route → ruleset)
+- Error messages for missing rulesets
+
+### Template Logic
+
+**Route Filtering:**
+```
+Filters routes to only those starting with "route-to-"
+Uses ARM template filter() and lambda functions
+```
+
+**Identifier Mapping:**
+- Explicit mapping for known identifiers: `route-to-azure` → `Azure`, `route-to-onprem` → `OnPrem`
+- Fallback: Capitalizes the identifier substring for other routes
+
+**Ruleset Replacement:**
+- Uses nested map() functions to iterate through existing rulesets
+- Replaces only rulesets matching the `Bilanciamento*` pattern
+- Preserves order and position of rulesets in the array
+- Case-insensitive comparison using toLower()
+- All other rulesets remain untouched
+
+**Property Preservation:**
+All route properties are captured during UI interaction and passed unchanged to the deployment:
+- originGroup
+- customDomains
+- patternsToMatch
+- supportedProtocols
+- httpsRedirect
+- forwardingProtocol
+- enabledState
+- linkToDefaultDomain
+- cacheConfiguration
+- ruleSets (updated with new Bilanciamento ruleset)
+
+## Examples
+
+### Example 1: Single Route Update
+
+**Scenario**: Update `route-to-azure` to send 70% traffic to Site B
+
+**Steps:**
+1. Select Front Door endpoint with `route-to-azure`
+2. Choose "SiteA30SiteB70" from dropdown
+3. UI displays: `route-to-azure → BilanciamentoAzureSiteA30SiteB70`
+4. Deploy
+
+**Result**: Route's Bilanciamento ruleset is replaced with `BilanciamentoAzureSiteA30SiteB70`, all other properties unchanged
+
+### Example 2: Multiple Routes Update
+
+**Scenario**: Update both `route-to-azure` and `route-to-onprem` to 50/50 split
+
+**Steps:**
+1. Select Front Door endpoint
+2. Choose "SiteA50SiteB50"
+3. UI displays:
+   - `route-to-azure → BilanciamentoAzureSiteA50SiteB50`
+   - `route-to-onprem → BilanciamentoOnPremSiteA50SiteB50`
+4. Deploy
+
+**Result**: Both routes updated with their respective 50/50 rulesets
+
+### Example 3: Validation Block
+
+**Scenario**: Attempting to use a percentage without required rulesets
+
+**Steps:**
+1. Select "SiteA60SiteB40"
+2. UI checks for `BilanciamentoAzureSiteA60SiteB40` and `BilanciamentoOnPremSiteA60SiteB40`
+3. If either doesn't exist, error message appears: "⚠️ Required rulesets missing..."
+4. Deployment is blocked
+
+**Result**: User must create missing rulesets before proceeding
+
+## Troubleshooting
+
+**Issue**: "Required rulesets missing" error
+- **Cause**: One or more `Bilanciamento<Identifier>SiteA<a>SiteB<b>` rulesets don't exist
+- **Solution**: Create the missing rulesets in Azure Front Door with exact naming format
+
+**Issue**: Route not appearing in UI
+- **Cause**: Route name doesn't match `route-to-*` pattern
+- **Solution**: Rename route to follow `route-to-<identifier>` format
 
 ## Known issues / work-arounds
 
 | # | Issue | Status / Work-around |
 |---|-------|---------------------|
-| 1 | When only **one** route is selected, the portal serializes the value as a *string* instead of a single-item array, causing ARM template validation failures. | **FIXED**: UI Definition now automatically detects and converts single route selections to proper arrays. Both count display and ARM template deployment work correctly for single and multiple selections. |
-| 2 | After a Rule Set association change the *Route* blade in Front Door Manager may still show the **old** Rule Set. | Press **F5** in the browser (the page reload) – the *Refresh* button inside the blade is not sufficient. You can also check the associations in the other *Rule Sets* blade, since it reflects the change immediately without forcing a browser refresh |
-| 3 | ARM templates have a size limit of 4 MiB (https://learn.microsoft.com/en-us/azure/azure-resource-manager/templates/best-practices#template-limits). For FrontDoor profiles with complex configurations using many routes with additional configurations (ie. caching), the limit can be potentially reached | Repeat the operation in batches of fewer routes each |
-
-## Recent Updates
-
-### Business Rule Enhancement
-- **New filtering requirement**: Template now enforces that ruleset associations can only be applied to routes that already have load balancing rulesets
-- **UI enforcement**: Route dropdown only shows routes with existing load balancing rulesets
-- **Prevents expansion**: Cannot add load balancing to new routes, only modify/remove existing associations
-
-### Portal Serialization Bug Fix
-- **Problem**: Single route selection showed incorrect count (character length instead of "1")
-- **Solution**: Implemented automatic string-to-array conversion in UI Definition
-- **Result**: Consistent behavior for single and multiple route selections
-
-### Enhanced Statistics Display
-- **Detailed metrics**: Shows breakdown of routes with load balancing vs. total
-- **Ruleset breakdown**: Displays load balancing rulesets vs. total available
-- **Consistent information**: Same statistics shown on multiple wizard pages
-- **Visual improvements**: Added 📊 icons for better readability
+| 1 | After a Rule Set association change the *Route* blade in Front Door Manager may still show the **old** Rule Set. | Press **F5** in the browser (the page reload) – the *Refresh* button inside the blade is not sufficient. You can also check the associations in the other *Rule Sets* blade, since it reflects the change immediately without forcing a browser refresh |
+| 2 | ARM templates have a size limit of 4 MiB (https://learn.microsoft.com/en-us/azure/azure-resource-manager/templates/best-practices#template-limits). For FrontDoor profiles with complex configurations using many routes with additional configurations (ie. caching), the limit can be potentially reached | Repeat the operation in batches of fewer routes each |
