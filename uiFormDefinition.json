@@ -169,6 +169,7 @@
                             "name": "deploymentBlocker",
                             "type": "Microsoft.Common.TextBox",
                             "label": "Validation Status",
+                            "defaultValue": "DEPLOYMENT BLOCKED - Required rulesets are missing",
                             "visible": "[and(not(empty(steps('associations').ddLoadBalancing)), or(equals(length(filter(steps('basics').afdRuleSets.value, (rs) => equals(toLower(rs.name), toLower(concat('BilanciamentoAzure', steps('associations').ddLoadBalancing))))), 0), equals(length(filter(steps('basics').afdRuleSets.value, (rs) => equals(toLower(rs.name), toLower(concat('BilanciamentoOnPrem', steps('associations').ddLoadBalancing))))), 0)))]",
                             "constraints": {
                                 "required": true,
