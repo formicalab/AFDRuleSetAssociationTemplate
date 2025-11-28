@@ -109,7 +109,7 @@
         "afd_profile_name": "[last(split(parameters('afd_profile_id'), '/'))]",
         "afd_endpoint_name": "[last(split(parameters('afd_endpoint_id'), '/'))]",
         
-        "route_identifiers": "[map(range(0, length(parameters('route_names'))), lambda('i', if(equals(parameters('route_names')[lambdaVariables('i')], 'route-to-azure'), 'Azure', if(equals(parameters('route_names')[lambdaVariables('i')], 'route-to-onprem'), 'OnPrem', concat(toUpper(substring(parameters('route_names')[lambdaVariables('i')], 9, 1)), substring(parameters('route_names')[lambdaVariables('i')], 10))))))]",
+        "route_identifiers": "[map(range(0, length(parameters('route_names'))), lambda('i', concat(toUpper(substring(parameters('route_names')[lambdaVariables('i')], 9, 1)), substring(parameters('route_names')[lambdaVariables('i')], 10))))]",
         
         "processedRuleSets": "[map(range(0, length(parameters('route_names'))), lambda('i', map(parameters('route_currentRuleSets')[lambdaVariables('i')], lambda('rs', if(startsWith(last(split(lambdaVariables('rs').id, '/')), 'Bilanciamento'), createObject('id', first(map(filter(parameters('afd_rulesets'), lambda('ruleset', equals(toLower(lambdaVariables('ruleset').name), toLower(concat('Bilanciamento', variables('route_identifiers')[lambdaVariables('i')], parameters('selected_load_balancing')))))), lambda('ruleset', lambdaVariables('ruleset').id)))), lambdaVariables('rs'))))))]"
     },

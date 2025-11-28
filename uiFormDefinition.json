@@ -154,16 +154,16 @@
                             "visible": "[not(empty(steps('associations').ddLoadBalancing))]",
                             "options": {
                                 "style": "Info",
-                                "text": "[concat('✓ <b>Load Balancing Selected:</b> ', steps('associations').ddLoadBalancing, '<br/><br/><b>Route → Ruleset Mapping:</b><br/>• route-to-azure → BilanciamentoAzure', steps('associations').ddLoadBalancing, '<br/>• route-to-onprem → BilanciamentoOnPrem', steps('associations').ddLoadBalancing)]"
+                                "text": "[concat('✓ <b>Load Balancing Selected:</b> ', steps('associations').ddLoadBalancing, '<br/><br/><b>Routes that will be updated (', string(length(steps('basics').afdRoutes.transformed.routeToList)), ' routes):</b><br/>', replace(replace(replace(string(steps('basics').afdRoutes.transformed.routeToList), '[\"', '• '), '\",\"', '<br/>• '), '\"]', ''), '<br/><br/><b>Ruleset Mapping Convention:</b><br/>• route-to-<i>xxx</i> → Bilanciamento<i>Xxx</i>', steps('associations').ddLoadBalancing)]"
                             }
                         },
                         {
                             "name": "validationCheck",
                             "type": "Microsoft.Common.InfoBox",
-                            "visible": "[and(not(empty(steps('associations').ddLoadBalancing)), or(equals(length(filter(steps('basics').afdRuleSets.value, (rs) => equals(toLower(rs.name), toLower(concat('BilanciamentoAzure', steps('associations').ddLoadBalancing))))), 0), equals(length(filter(steps('basics').afdRuleSets.value, (rs) => equals(toLower(rs.name), toLower(concat('BilanciamentoOnPrem', steps('associations').ddLoadBalancing))))), 0)))]",
+                            "visible": "[and(not(empty(steps('associations').ddLoadBalancing)), greater(length(filter(steps('basics').afdRoutes.transformed.routeToList, (routeName) => not(contains(string(map(steps('basics').afdRuleSets.value, (rs) => toLower(rs.name))), toLower(concat('bilanciamento', replace(routeName, 'route-to-', ''), steps('associations').ddLoadBalancing)))))), 0))]",
                             "options": {
                                 "style": "Error",
-                                "text": "[concat('⚠️ <b>ERROR: Missing Rulesets Detected!</b><br/><br/>One or more required rulesets do not exist in the Front Door profile. Missing rulesets:<br/>', if(equals(length(filter(steps('basics').afdRuleSets.value, (rs) => equals(toLower(rs.name), toLower(concat('BilanciamentoAzure', steps('associations').ddLoadBalancing))))), 0), concat('• BilanciamentoAzure', steps('associations').ddLoadBalancing, '<br/>'), ''), if(equals(length(filter(steps('basics').afdRuleSets.value, (rs) => equals(toLower(rs.name), toLower(concat('BilanciamentoOnPrem', steps('associations').ddLoadBalancing))))), 0), concat('• BilanciamentoOnPrem', steps('associations').ddLoadBalancing), ''), '<br/><br/>Please ensure all required Bilanciamento rulesets exist before proceeding with deployment.')]"
+                                "text": "[concat('<b>ERROR: Missing Rulesets Detected!</b><br/><br/>One or more required rulesets do not exist in the Front Door profile.<br/><br/><b>Missing rulesets (', string(length(filter(steps('basics').afdRoutes.transformed.routeToList, (routeName) => not(contains(string(map(steps('basics').afdRuleSets.value, (rs) => toLower(rs.name))), toLower(concat('bilanciamento', replace(routeName, 'route-to-', ''), steps('associations').ddLoadBalancing))))))), '):</b><br/>', replace(replace(replace(string(map(filter(steps('basics').afdRoutes.transformed.routeToList, (routeName) => not(contains(string(map(steps('basics').afdRuleSets.value, (rs) => toLower(rs.name))), toLower(concat('bilanciamento', replace(routeName, 'route-to-', ''), steps('associations').ddLoadBalancing))))), (routeName) => concat('Bilanciamento', toUpper(first(replace(routeName, 'route-to-', ''))), skip(replace(routeName, 'route-to-', ''), 1), steps('associations').ddLoadBalancing))), '[\"', '• '), '\",\"', '<br/>• '), '\"]', ''), '<br/><br/>Please ensure all required Bilanciamento rulesets exist before proceeding with deployment.<br/><br/><i>Note: Ruleset names are case-insensitive (e.g., BilanciamentoAzureSiteA30SiteB70 and Bilanciamentoazuresitea30siteb70 are equivalent).</i>')]"
                             }
                         },
                         {
@@ -171,7 +171,7 @@
                             "type": "Microsoft.Common.TextBox",
                             "label": "Validation Status",
                             "defaultValue": "DEPLOYMENT BLOCKED - Required rulesets are missing",
-                            "visible": "[and(not(empty(steps('associations').ddLoadBalancing)), or(equals(length(filter(steps('basics').afdRuleSets.value, (rs) => equals(toLower(rs.name), toLower(concat('BilanciamentoAzure', steps('associations').ddLoadBalancing))))), 0), equals(length(filter(steps('basics').afdRuleSets.value, (rs) => equals(toLower(rs.name), toLower(concat('BilanciamentoOnPrem', steps('associations').ddLoadBalancing))))), 0)))]",
+                            "visible": "[and(not(empty(steps('associations').ddLoadBalancing)), greater(length(filter(steps('basics').afdRoutes.transformed.routeToList, (routeName) => not(contains(string(map(steps('basics').afdRuleSets.value, (rs) => toLower(rs.name))), toLower(concat('bilanciamento', replace(routeName, 'route-to-', ''), steps('associations').ddLoadBalancing)))))), 0))]",
                             "constraints": {
                                 "required": true,
                                 "validations": [
