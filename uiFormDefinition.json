@@ -115,7 +115,7 @@
                             "visible": "[not(empty(steps('basics').afdEndpointSelector))]",
                             "options": {
                                 "style": "Info",
-                                "text": "[concat('✓ <b>Configuration Summary:</b><ul><li>FrontDoor profile: <b>', steps('basics').afdProfileSelector.name, '</b> (sku: ', steps('basics').afdProfile.sku.name, ')</li><li>Endpoint: <b>', steps('basics').afdEndpoint.name, '</b> (hostName: ', steps('basics').afdEndpoint.properties.hostName, ')</li><li>📊 <b>Routes (route-to-*):</b> ', string(length(filter(steps('basics').afdRoutes.transformed.list, (r) => startsWith(r.label, 'route-to-')))), ' found</li><li>📋 <b>Bilanciamento Rulesets:</b> ', string(length(filter(steps('basics').afdRuleSets.value, (rs) => if(and(startsWith(rs.name, 'Bilanciamento'), greater(length(rs.name), 13)), and(contains(rs.name, 'SiteA'), contains(rs.name, 'SiteB')), false)))), ' found</li></ul>')]"
+                                "text": "[concat('✓ <b>Configuration Summary:</b><ul><li>FrontDoor profile: <b>', steps('basics').afdProfileSelector.name, '</b> (sku: ', steps('basics').afdProfile.sku.name, ')</li><li>Endpoint: <b>', steps('basics').afdEndpoint.name, '</b> (hostName: ', steps('basics').afdEndpoint.properties.hostName, ')</li><li>📊 <b>Routes (route-to-*):</b> ', string(length(filter(steps('basics').afdRoutes.value, (r) => startsWith(r.name, 'route-to-')))), ' total, ', string(length(filter(steps('basics').afdRoutes.value, (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))))), ' with Bilanciamento</li><li>📋 <b>Bilanciamento Rulesets:</b> ', string(length(filter(steps('basics').afdRuleSets.value, (rs) => if(and(startsWith(rs.name, 'Bilanciamento'), greater(length(rs.name), 13)), and(contains(rs.name, 'SiteA'), contains(rs.name, 'SiteB')), false)))), ' found</li></ul>')]"
                             }
                         }
                     ]
@@ -154,16 +154,16 @@
                             "visible": "[not(empty(steps('associations').ddLoadBalancing))]",
                             "options": {
                                 "style": "Info",
-                                "text": "[concat('✓ <b>Load Balancing Selected:</b> ', steps('associations').ddLoadBalancing, '<br/><br/><b>Routes that will be updated (', string(length(steps('basics').afdRoutes.transformed.routeToList)), ' routes):</b><br/>', replace(replace(replace(string(steps('basics').afdRoutes.transformed.routeToList), '[\"', '• '), '\",\"', '<br/>• '), '\"]', ''), '<br/><br/><b>Ruleset Mapping Convention:</b><br/>• route-to-<i>xxx</i> → Bilanciamento<i>Xxx</i>', steps('associations').ddLoadBalancing)]"
+                                "text": "[concat('✓ <b>Load Balancing Selected:</b> ', steps('associations').ddLoadBalancing, '<br/><br/><b>Routes that will be updated (', string(length(filter(steps('basics').afdRoutes.value, (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))))), ' routes):</b><br/>', replace(replace(replace(string(map(filter(steps('basics').afdRoutes.value, (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.name)), '[\"', '• '), '\",\"', '<br/>• '), '\"]', ''), '<br/><br/><i>Only routes matching <b>route-to-*</b> pattern AND already associated with a Bilanciamento ruleset are shown.</i><br/><br/><b>Ruleset Mapping Convention:</b><br/>• route-to-<i>xxx</i> → Bilanciamento<i>Xxx</i>', steps('associations').ddLoadBalancing)]"
                             }
                         },
                         {
                             "name": "validationCheck",
                             "type": "Microsoft.Common.InfoBox",
-                            "visible": "[and(not(empty(steps('associations').ddLoadBalancing)), greater(length(filter(steps('basics').afdRoutes.transformed.routeToList, (routeName) => not(contains(string(map(steps('basics').afdRuleSets.value, (rs) => toLower(rs.name))), toLower(concat('bilanciamento', replace(routeName, 'route-to-', ''), steps('associations').ddLoadBalancing)))))), 0))]",
+                            "visible": "[and(not(empty(steps('associations').ddLoadBalancing)), greater(length(filter(map(filter(steps('basics').afdRoutes.value, (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.name), (routeName) => not(contains(string(map(steps('basics').afdRuleSets.value, (rs) => toLower(rs.name))), toLower(concat('bilanciamento', replace(routeName, 'route-to-', ''), steps('associations').ddLoadBalancing)))))), 0))]",
                             "options": {
                                 "style": "Error",
-                                "text": "[concat('<b>ERROR: Missing Rulesets Detected!</b><br/><br/>One or more required rulesets do not exist in the Front Door profile.<br/><br/><b>Missing rulesets (', string(length(filter(steps('basics').afdRoutes.transformed.routeToList, (routeName) => not(contains(string(map(steps('basics').afdRuleSets.value, (rs) => toLower(rs.name))), toLower(concat('bilanciamento', replace(routeName, 'route-to-', ''), steps('associations').ddLoadBalancing))))))), '):</b><br/>', replace(replace(replace(string(map(filter(steps('basics').afdRoutes.transformed.routeToList, (routeName) => not(contains(string(map(steps('basics').afdRuleSets.value, (rs) => toLower(rs.name))), toLower(concat('bilanciamento', replace(routeName, 'route-to-', ''), steps('associations').ddLoadBalancing))))), (routeName) => concat('Bilanciamento', toUpper(first(replace(routeName, 'route-to-', ''))), skip(replace(routeName, 'route-to-', ''), 1), steps('associations').ddLoadBalancing))), '[\"', '• '), '\",\"', '<br/>• '), '\"]', ''), '<br/><br/>Please ensure all required Bilanciamento rulesets exist before proceeding with deployment.<br/><br/><i>Note: Ruleset names are case-insensitive (e.g., BilanciamentoAzureSiteA30SiteB70 and Bilanciamentoazuresitea30siteb70 are equivalent).</i>')]"
+                                "text": "[concat('<b>ERROR: Missing Rulesets Detected!</b><br/><br/>One or more required rulesets do not exist in the Front Door profile.<br/><br/><b>Missing rulesets (', string(length(filter(map(filter(steps('basics').afdRoutes.value, (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.name), (routeName) => not(contains(string(map(steps('basics').afdRuleSets.value, (rs) => toLower(rs.name))), toLower(concat('bilanciamento', replace(routeName, 'route-to-', ''), steps('associations').ddLoadBalancing))))))), '):</b><br/>', replace(replace(replace(string(map(filter(map(filter(steps('basics').afdRoutes.value, (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.name), (routeName) => not(contains(string(map(steps('basics').afdRuleSets.value, (rs) => toLower(rs.name))), toLower(concat('bilanciamento', replace(routeName, 'route-to-', ''), steps('associations').ddLoadBalancing))))), (routeName) => concat('Bilanciamento', toUpper(first(replace(routeName, 'route-to-', ''))), skip(replace(routeName, 'route-to-', ''), 1), steps('associations').ddLoadBalancing))), '[\"', '• '), '\",\"', '<br/>• '), '\"]', ''), '<br/><br/>Please ensure all required Bilanciamento rulesets exist before proceeding with deployment.<br/><br/><i>Note: Ruleset names are case-insensitive (e.g., BilanciamentoAzureSiteA30SiteB70 and Bilanciamentoazuresitea30siteb70 are equivalent).</i>')]"
                             }
                         },
                         {
@@ -171,13 +171,38 @@
                             "type": "Microsoft.Common.TextBox",
                             "label": "Validation Status",
                             "defaultValue": "DEPLOYMENT BLOCKED - Required rulesets are missing",
-                            "visible": "[and(not(empty(steps('associations').ddLoadBalancing)), greater(length(filter(steps('basics').afdRoutes.transformed.routeToList, (routeName) => not(contains(string(map(steps('basics').afdRuleSets.value, (rs) => toLower(rs.name))), toLower(concat('bilanciamento', replace(routeName, 'route-to-', ''), steps('associations').ddLoadBalancing)))))), 0))]",
+                            "visible": "[and(not(empty(steps('associations').ddLoadBalancing)), greater(length(filter(map(filter(steps('basics').afdRoutes.value, (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.name), (routeName) => not(contains(string(map(steps('basics').afdRuleSets.value, (rs) => toLower(rs.name))), toLower(concat('bilanciamento', replace(routeName, 'route-to-', ''), steps('associations').ddLoadBalancing)))))), 0))]",
                             "constraints": {
                                 "required": true,
                                 "validations": [
                                     {
                                         "isValid": "[equals(1, 0)]",
                                         "message": "Deployment blocked: Required rulesets are missing. Please create the missing Bilanciamento rulesets before proceeding."
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "name": "noEligibleRoutesWarning",
+                            "type": "Microsoft.Common.InfoBox",
+                            "visible": "[and(not(empty(steps('associations').ddLoadBalancing)), equals(length(filter(steps('basics').afdRoutes.value, (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento')))), 0))]",
+                            "options": {
+                                "style": "Error",
+                                "text": "<b>ERROR: No Eligible Routes Found!</b><br/><br/>No routes matching the required criteria were found.<br/><br/><b>Criteria for eligible routes:</b><br/>• Route name must follow the <b>route-to-*</b> pattern<br/>• Route must already have an association with a <b>Bilanciamento</b> ruleset<br/><br/>Please ensure at least one route meets both criteria before proceeding."
+                            }
+                        },
+                        {
+                            "name": "noEligibleRoutesBlocker",
+                            "type": "Microsoft.Common.TextBox",
+                            "label": "Validation Status",
+                            "defaultValue": "DEPLOYMENT BLOCKED - No eligible routes found",
+                            "visible": "[and(not(empty(steps('associations').ddLoadBalancing)), equals(length(filter(steps('basics').afdRoutes.value, (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento')))), 0))]",
+                            "constraints": {
+                                "required": true,
+                                "validations": [
+                                    {
+                                        "isValid": "[equals(1, 0)]",
+                                        "message": "Deployment blocked: No eligible routes found. Routes must match route-to-* pattern AND have an existing Bilanciamento ruleset association."
                                     }
                                 ]
                             }
@@ -192,19 +217,19 @@
                 "afd_endpoint_id": "[steps('basics').afdEndpoint.id]",
                 "selected_load_balancing": "[steps('associations').ddLoadBalancing]",
                 "afd_rulesets": "[steps('basics').afdRuleSets.value]",
-                "route_names": "[map(filter(steps('basics').afdRoutes.value, (r) => startsWith(r.name, 'route-to-')), (r) => r.name)]",
-                "route_originGroups": "[map(filter(steps('basics').afdRoutes.value, (r) => startsWith(r.name, 'route-to-')), (r) => r.properties.originGroup.id)]",
-                "route_originPath": "[map(filter(steps('basics').afdRoutes.value, (r) => startsWith(r.name, 'route-to-')), (r) => r.properties.originPath)]",
-                "route_customDomains": "[map(filter(steps('basics').afdRoutes.value, (r) => startsWith(r.name, 'route-to-')), (r) => r.properties.customDomains)]",
-                "route_patterns": "[map(filter(steps('basics').afdRoutes.value, (r) => startsWith(r.name, 'route-to-')), (r) => r.properties.patternsToMatch)]",
-                "route_protocols": "[map(filter(steps('basics').afdRoutes.value, (r) => startsWith(r.name, 'route-to-')), (r) => r.properties.supportedProtocols)]",
-                "route_httpsRedirect": "[map(filter(steps('basics').afdRoutes.value, (r) => startsWith(r.name, 'route-to-')), (r) => r.properties.httpsRedirect)]",
-                "route_forwardingProto": "[map(filter(steps('basics').afdRoutes.value, (r) => startsWith(r.name, 'route-to-')), (r) => r.properties.forwardingProtocol)]",
-                "route_enabledState": "[map(filter(steps('basics').afdRoutes.value, (r) => startsWith(r.name, 'route-to-')), (r) => r.properties.enabledState)]",
-                "route_linkToDefaultDomain": "[map(filter(steps('basics').afdRoutes.value, (r) => startsWith(r.name, 'route-to-')), (r) => r.properties.linkToDefaultDomain)]",
-                "route_cacheConfig": "[map(filter(steps('basics').afdRoutes.value, (r) => startsWith(r.name, 'route-to-')), (r) => r.properties.cacheConfiguration)]",
-                "route_currentRuleSets": "[map(filter(steps('basics').afdRoutes.value, (r) => startsWith(r.name, 'route-to-')), (r) => r.properties.ruleSets)]",
-                "all_route_ids": "[map(filter(steps('basics').afdRoutes.value, (r) => startsWith(r.name, 'route-to-')), (r) => r.id)]"
+                "route_names": "[map(filter(steps('basics').afdRoutes.value, (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.name)]",
+                "route_originGroups": "[map(filter(steps('basics').afdRoutes.value, (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.properties.originGroup.id)]",
+                "route_originPath": "[map(filter(steps('basics').afdRoutes.value, (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.properties.originPath)]",
+                "route_customDomains": "[map(filter(steps('basics').afdRoutes.value, (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.properties.customDomains)]",
+                "route_patterns": "[map(filter(steps('basics').afdRoutes.value, (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.properties.patternsToMatch)]",
+                "route_protocols": "[map(filter(steps('basics').afdRoutes.value, (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.properties.supportedProtocols)]",
+                "route_httpsRedirect": "[map(filter(steps('basics').afdRoutes.value, (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.properties.httpsRedirect)]",
+                "route_forwardingProto": "[map(filter(steps('basics').afdRoutes.value, (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.properties.forwardingProtocol)]",
+                "route_enabledState": "[map(filter(steps('basics').afdRoutes.value, (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.properties.enabledState)]",
+                "route_linkToDefaultDomain": "[map(filter(steps('basics').afdRoutes.value, (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.properties.linkToDefaultDomain)]",
+                "route_cacheConfig": "[map(filter(steps('basics').afdRoutes.value, (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.properties.cacheConfiguration)]",
+                "route_currentRuleSets": "[map(filter(steps('basics').afdRoutes.value, (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.properties.ruleSets)]",
+                "all_route_ids": "[map(filter(steps('basics').afdRoutes.value, (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.id)]"
             },
             "kind": "ResourceGroup",
             "location": "[steps('basics').resourceScope.location.name]",
