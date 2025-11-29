@@ -470,30 +470,6 @@
         "afdBRoutesUpdated": {
             "type": "int",
             "value": "[if(variables('deployAfdB'), reference('afdBDeployment').outputs.routesUpdated.value, 0)]"
-        },
-        "DEBUG_resourceGroupA": {
-            "type": "string",
-            "value": "[coalesce(parameters('resourceGroupA'), '(null)')]"
-        },
-        "DEBUG_selected_routesA": {
-            "type": "array",
-            "value": "[coalesce(parameters('selected_routesA'), createArray('(null)'))]"
-        },
-        "DEBUG_selected_routesA_length": {
-            "type": "int",
-            "value": "[length(coalesce(parameters('selected_routesA'), createArray()))]"
-        },
-        "DEBUG_selected_ruleset_idA": {
-            "type": "string",
-            "value": "[coalesce(parameters('selected_ruleset_idA'), '(null)')]"
-        },
-        "DEBUG_all_route_idsA": {
-            "type": "array",
-            "value": "[coalesce(parameters('all_route_idsA'), createArray('(null)'))]"
-        },
-        "DEBUG_all_route_idsA_length": {
-            "type": "int",
-            "value": "[length(coalesce(parameters('all_route_idsA'), createArray()))]"
         }
     }
 }
