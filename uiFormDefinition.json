@@ -30,8 +30,8 @@
                     ]
                 },
                 {
-                    "name": "afdA",
-                    "label": "AFD A (n-routes-1-ruleset)",
+                    "name": "afdABasics",
+                    "label": "AFD A - Basics",
                     "elements": [
                         {
                             "name": "afdAInfoBlock",
@@ -39,7 +39,7 @@
                             "visible": true,
                             "options": {
                                 "style": "Info",
-                                "text": "<b>AFD A Configuration</b><br/>This AFD follows the <b>n-routes-1-ruleset</b> logic: apply a single selected ruleset to multiple selected routes.<br/><br/><i>Note: AFD A configuration is not yet implemented. Leave empty to skip.</i>"
+                                "text": "[concat('<b>AFD A Configuration</b><br/>This AFD follows the <b>n-routes-1-ruleset</b> logic: apply a single selected ruleset to multiple selected routes.<br/><br/><i>Leave empty to skip AFD A configuration.</i><br/><br/>Use this template to modify ruleset associations for <ul><li>FrontDoor profile: <b>', steps('afdABasics').afdAProfileSelector.name, '</b> (sku: ', steps('afdABasics').afdAProfile.sku.name, ')</li><li>Endpoint: <b>', steps('afdABasics').afdAEndpoint.name, '</b> (hostName: ', steps('afdABasics').afdAEndpoint.properties.hostName, ')</li><li>📊 <b>Routes:</b> ', string(length(filter(steps('afdABasics').afdARoutes.transformed.routeList, (r) => greater(length(filter(r.ruleSetIds, (rs) => startsWith(toLower(last(split(rs.id, '/'))), 'bilanciamento'))), 0)))), ' of ', string(length(steps('afdABasics').afdARoutes.value)), ' have load balancing rulesets configured</li><li>📊 <b>Available rulesets:</b> ', string(length(filter(steps('afdABasics').afdARuleSets.value, (item) => startsWith(toLower(item.name), 'bilanciamento')))), ' load balancing of <b>', string(length(steps('afdABasics').afdARuleSets.value)), '</b> total</li></ul>')]"
                             }
                         },
                         {
@@ -59,7 +59,7 @@
                             "type": "Microsoft.Solutions.ArmApiControl",
                             "request": {
                                 "method": "GET",
-                                "path": "[if(empty(steps('afdA').afdAProfileSelector.id), '', concat(steps('afdA').afdAProfileSelector.id, '?api-version=2025-04-15'))]"
+                                "path": "[concat(steps('afdABasics').afdAProfileSelector.id, '?api-version=2025-04-15')]"
                             }
                         },
                         {
@@ -67,7 +67,7 @@
                             "type": "Microsoft.Solutions.ArmApiControl",
                             "request": {
                                 "method": "GET",
-                                "path": "[if(empty(steps('afdA').afdAProfileSelector.id), '', concat(steps('afdA').afdAProfileSelector.id, '/afdEndpoints?api-version=2025-04-15'))]"
+                                "path": "[concat(steps('afdABasics').afdAProfileSelector.id, '/afdEndpoints?api-version=2025-04-15')]"
                             }
                         },
                         {
@@ -76,33 +76,146 @@
                             "label": "Select the desired endpoint in AFD A",
                             "filter": true,
                             "constraints": {
-                                "allowedValues": "[if(empty(coalesce(steps('afdA').afdAEndpoints.value, parse('[]'))), parse('[]'), map(steps('afdA').afdAEndpoints.value, (item) => parse(concat('{\"label\":\"', item.name, '\",\"value\":\"', item.id, '\",\"description\":\"', item.properties.hostName, '\"}'))))]",
+                                "allowedValues": "[map(steps('afdABasics').afdAEndpoints.value, (item) => parse(concat('{\"label\":\"', item.name, '\",\"value\":\"', item.id, '\",\"description\":\"', item.properties.hostName, '\"}')))]",
                                 "required": false
                             },
-                            "visible": "[not(empty(steps('afdA').afdAProfileSelector.id))]"
+                            "visible": true
                         },
                         {
                             "name": "afdAEndpoint",
                             "type": "Microsoft.Solutions.ArmApiControl",
                             "request": {
                                 "method": "GET",
-                                "path": "[if(empty(steps('afdA').afdAEndpointSelector), '', concat(steps('afdA').afdAEndpointSelector, '?api-version=2025-04-15'))]"
+                                "path": "[concat(steps('afdABasics').afdAEndpointSelector, '?api-version=2025-04-15')]"
                             }
                         },
                         {
-                            "name": "afdASummaryInfoBlock",
+                            "name": "afdARuleSets",
+                            "type": "Microsoft.Solutions.ArmApiControl",
+                            "request": {
+                                "method": "GET",
+                                "path": "[concat(steps('afdABasics').afdAProfile.id, '/ruleSets?api-version=2025-04-15')]",
+                                "transforms": {
+                                    "list": "value|[*].{label:name, value:id}",
+                                    "listWithRemove": "[value|[*].{label:name, value:id}, [{label: '---', value: '---'}]][]"
+                                }
+                            }
+                        },
+                        {
+                            "name": "afdANoRoutesWarning",
                             "type": "Microsoft.Common.InfoBox",
-                            "visible": "[not(empty(steps('afdA').afdAEndpointSelector))]",
+                            "visible": "[equals(length(coalesce(steps('afdABasics').afdARoutes.value, [])), 0)]",
                             "options": {
-                                "style": "Info",
-                                "text": "[concat('✓ <b>AFD A Configuration Summary:</b><ul><li>FrontDoor profile: <b>', steps('afdA').afdAProfileSelector.name, '</b> (sku: ', coalesce(steps('afdA').afdAProfile.sku.name, 'N/A'), ')</li><li>Endpoint: <b>', coalesce(steps('afdA').afdAEndpoint.name, 'N/A'), '</b> (hostName: ', coalesce(steps('afdA').afdAEndpoint.properties.hostName, 'N/A'), ')</li></ul><br/><i>AFD A route/ruleset configuration will be added in a future update.</i>')]"
+                                "style": "Warning",
+                                "text": "The selected endpoint has <b>no routes</b>. Select a different endpoint or create routes first."
+                            }
+                        },
+                        {
+                            "name": "afdARoutes",
+                            "type": "Microsoft.Solutions.ArmApiControl",
+                            "request": {
+                                "method": "GET",
+                                "path": "[concat(steps('afdABasics').afdAEndpoint.id, '/routes?api-version=2025-04-15')]",
+                                "transforms": {
+                                    "routeList": "[value|[*].{label:name, value:id, ruleSetIds:properties.ruleSets}][]",
+                                    "currentRuleSets": "[value|[*].properties.ruleSets][]",
+                                    "originGroups": "[value|[*].properties.originGroup.id][]",
+                                    "originPath": "[value|[*].properties.originPath][]",
+                                    "customDomains": "[value|[*].properties.customDomains][]",
+                                    "patterns": "[value|[*].properties.patternsToMatch][]",
+                                    "protocols": "[value|[*].properties.supportedProtocols][]",
+                                    "httpsRedirect": "[value|[*].properties.httpsRedirect][]",
+                                    "forwardingProtocol": "[value|[*].properties.forwardingProtocol][]",
+                                    "enabledState": "[value|[*].properties.enabledState][]",
+                                    "linkToDefaultDomain": "[value|[*].properties.linkToDefaultDomain][]",
+                                    "cacheConfiguration": "value|[*].properties.cacheConfiguration",
+                                    "routeIds": "[value|[*].id][]"
+                                }
                             }
                         }
                     ]
                 },
                 {
-                    "name": "afdB",
-                    "label": "AFD B (n-routes-n-rulesets)",
+                    "name": "afdAAssociations",
+                    "label": "AFD A - Associations",
+                    "elements": [
+                        {
+                            "name": "afdASkippedInfo",
+                            "type": "Microsoft.Common.InfoBox",
+                            "visible": "[empty(steps('afdABasics').afdAEndpointSelector)]",
+                            "options": {
+                                "style": "Warning",
+                                "text": "<b>AFD A not configured</b><br/>No endpoint was selected for AFD A. Go back to the previous step if you want to configure AFD A."
+                            }
+                        },
+                        {
+                            "name": "afdANoLoadBalancingRulesetsInfo",
+                            "type": "Microsoft.Common.InfoBox",
+                            "visible": "[equals(length(filter(steps('afdABasics').afdARuleSets.transformed.listWithRemove, (item) => startsWith(toLower(item.label), 'bilanciamento'))), 0)]",
+                            "options": {
+                                "style": "Warning",
+                                "text": "No load balancing rulesets found in this Front Door profile. You can only remove existing load balancing associations by selecting '---'."
+                            }
+                        },
+                        {
+                            "name": "afdANoLoadBalancingRoutesWarning",
+                            "type": "Microsoft.Common.InfoBox",
+                            "visible": "[equals(length(filter(steps('afdABasics').afdARoutes.transformed.routeList, (item) => greater(length(filter(item.ruleSetIds, (rs) => startsWith(toLower(last(split(rs.id, '/'))), 'bilanciamento'))), 0))), 0)]",
+                            "options": {
+                                "style": "Warning",
+                                "text": "No routes currently have load balancing rulesets associated. You must first associate load balancing rulesets to routes before using this template. Only routes with existing load balancing rulesets can be modified."
+                            }
+                        },
+                        {
+                            "name": "afdAWarningMessage",
+                            "type": "Microsoft.Common.InfoBox",
+                            "visible": true,
+                            "options": {
+                                "style": "Info",
+                                "text": "[concat('📊 <b>Routes:</b> ', string(length(filter(steps('afdABasics').afdARoutes.transformed.routeList, (r) => greater(length(filter(r.ruleSetIds, (rs) => startsWith(toLower(last(split(rs.id, '/'))), 'bilanciamento'))), 0)))), ' of ', string(length(steps('afdABasics').afdARoutes.value)), ' have load balancing rulesets configured<br/>📊 <b>Available rulesets:</b> ', string(length(filter(steps('afdABasics').afdARuleSets.value, (item) => startsWith(toLower(item.name), 'bilanciamento')))), ' load balancing of ', string(length(steps('afdABasics').afdARuleSets.value)), ' total<br/><br/>This operation will manage load balancing rulesets (names start with <b>Bilanciamento</b>) for routes that already have them configured.<br/><br/><b>Choices:</b><br/>• Select a load balancing ruleset: existing load balancing rulesets will be replaced with your selection. Other rulesets will be preserved.<br/>• Select \\'---\\': all load balancing rulesets will be removed. Other rulesets will be preserved.<br/><br/><b>Note:</b> Only routes with existing load balancing rulesets are shown in the dropdown below.')]"
+                            }
+                        },
+                        {
+                            "name": "afdARulesetSelector",
+                            "type": "Microsoft.Common.DropDown",
+                            "label": "Load balancing ruleset to associate or '---' to remove load balancing rulesets associated with the routes:",
+                            "placeholder": "Only load balancing rulesets are shown",
+                            "filter": true,
+                            "filterPlaceholder": "Filter items ...",
+                            "constraints": {
+                                "required": true,
+                                "allowedValues": "[filter(steps('afdABasics').afdARuleSets.transformed.listWithRemove, (item) => or(equals(item.value, '---'), startsWith(toLower(item.label), 'bilanciamento')))]"
+                            }
+                        },
+                        {
+                            "name": "afdACurrentSelectionSummary",
+                            "type": "Microsoft.Common.TextBlock",
+                            "visible": "[not(empty(steps('afdAAssociations').afdARulesetSelector))]",
+                            "options": {
+                                "text": "[concat('✓ <b>Selected:</b> ', if(equals(steps('afdAAssociations').afdARulesetSelector, '---'), 'Remove all load balancing rulesets', concat('Replace with <b>', last(split(steps('afdAAssociations').afdARulesetSelector, '/')), '</b>')))]"
+                            }
+                        },
+                        {
+                            "name": "afdARouteSelector",
+                            "type": "Microsoft.Common.DropDown",
+                            "label": "Routes to associate the rulesets with",
+                            "multiselect": true,
+                            "selectAll": true,
+                            "filter": true,
+                            "filterPlaceholder": "Filter items ...",
+                            "multiLine": true,
+                            "defaultDescription": "Route with load balancing",
+                            "constraints": {
+                                "allowedValues": "[map(filter(steps('afdABasics').afdARoutes.transformed.routeList, (item) => greater(length(filter(item.ruleSetIds, (rs) => startsWith(toLower(last(split(rs.id, '/'))), 'bilanciamento'))), 0)), (item) => parse(concat('{\"label\":\"', item.label, '\",\"value\":\"', item.value, '\",\"description\":\"', concat(string(length(item.ruleSetIds)), ' rulesets (has load balancing)'), '\"}')))]",
+                                "required": true
+                            },
+                            "visible": true
+                        }
+                    ]
+                },
+                {
+                    "name": "afdBBasics",
+                    "label": "AFD B - Basics",
                     "elements": [
                         {
                             "name": "afdBInfoBlock",
@@ -130,7 +243,7 @@
                             "type": "Microsoft.Solutions.ArmApiControl",
                             "request": {
                                 "method": "GET",
-                                "path": "[if(empty(steps('afdB').afdBProfileSelector.id), '', concat(steps('afdB').afdBProfileSelector.id, '?api-version=2025-04-15'))]"
+                                "path": "[concat(steps('afdBBasics').afdBProfileSelector.id, '?api-version=2025-04-15')]"
                             }
                         },
                         {
@@ -138,7 +251,7 @@
                             "type": "Microsoft.Solutions.ArmApiControl",
                             "request": {
                                 "method": "GET",
-                                "path": "[if(empty(steps('afdB').afdBProfileSelector.id), '', concat(steps('afdB').afdBProfileSelector.id, '/afdEndpoints?api-version=2025-04-15'))]"
+                                "path": "[concat(steps('afdBBasics').afdBProfileSelector.id, '/afdEndpoints?api-version=2025-04-15')]"
                             }
                         },
                         {
@@ -147,17 +260,17 @@
                             "label": "Select the desired endpoint in AFD B",
                             "filter": true,
                             "constraints": {
-                                "allowedValues": "[if(empty(coalesce(steps('afdB').afdBEndpoints.value, parse('[]'))), parse('[]'), map(steps('afdB').afdBEndpoints.value, (item) => parse(concat('{\"label\":\"', item.name, '\",\"value\":\"', item.id, '\",\"description\":\"', item.properties.hostName, '\"}'))))]",
+                                "allowedValues": "[map(steps('afdBBasics').afdBEndpoints.value, (item) => parse(concat('{\"label\":\"', item.name, '\",\"value\":\"', item.id, '\",\"description\":\"', item.properties.hostName, '\"}')))]",
                                 "required": false
                             },
-                            "visible": "[not(empty(steps('afdB').afdBProfileSelector.id))]"
+                            "visible": true
                         },
                         {
                             "name": "afdBEndpoint",
                             "type": "Microsoft.Solutions.ArmApiControl",
                             "request": {
                                 "method": "GET",
-                                "path": "[if(empty(steps('afdB').afdBEndpointSelector), '', concat(steps('afdB').afdBEndpointSelector, '?api-version=2025-04-15'))]"
+                                "path": "[concat(steps('afdBBasics').afdBEndpointSelector, '?api-version=2025-04-15')]"
                             }
                         },
                         {
@@ -165,7 +278,7 @@
                             "type": "Microsoft.Solutions.ArmApiControl",
                             "request": {
                                 "method": "GET",
-                                "path": "[if(empty(steps('afdB').afdBProfileSelector.id), '', concat(steps('afdB').afdBProfileSelector.id, '/ruleSets?api-version=2025-04-15'))]",
+                                "path": "[concat(steps('afdBBasics').afdBProfile.id, '/ruleSets?api-version=2025-04-15')]",
                                 "transforms": {
                                     "list": "value|[*].{label:name, value:id}"
                                 }
@@ -176,7 +289,7 @@
                             "type": "Microsoft.Solutions.ArmApiControl",
                             "request": {
                                 "method": "GET",
-                                "path": "[if(empty(steps('afdB').afdBEndpointSelector), '', concat(steps('afdB').afdBEndpointSelector, '/routes?api-version=2025-04-15'))]",
+                                "path": "[concat(steps('afdBBasics').afdBEndpoint.id, '/routes?api-version=2025-04-15')]",
                                 "transforms": {
                                     "list": "value|[*].{label:name, value:id}",
                                     "routeToList": "value|[?starts_with(name, 'route-to-')].name",
@@ -190,30 +303,39 @@
                                     "forwardingProtocol": "[value|[*].properties.forwardingProtocol][]",
                                     "enabledState": "[value|[*].properties.enabledState][]",
                                     "linkToDefaultDomain": "[value|[*].properties.linkToDefaultDomain][]",
-                                    "cacheConfiguration": "value|[*].{cacheConfiguration: properties.cacheConfiguration}",
+                                    "cacheConfiguration": "value|[*].properties.cacheConfiguration",
                                     "routeIds": "[value|[*].id][]"
                                 }
                             }
                         },
                         {
-                            "name": "summaryInfoBlock",
+                            "name": "afdBSummaryInfoBlock",
                             "type": "Microsoft.Common.InfoBox",
-                            "visible": "[not(empty(steps('afdB').afdBEndpointSelector))]",
+                            "visible": "[not(empty(steps('afdBBasics').afdBEndpointSelector))]",
                             "options": {
                                 "style": "Info",
-                                "text": "[concat('✓ <b>AFD B Configuration Summary:</b><ul><li>FrontDoor profile: <b>', steps('afdB').afdBProfileSelector.name, '</b> (sku: ', coalesce(steps('afdB').afdBProfile.sku.name, 'N/A'), ')</li><li>Endpoint: <b>', coalesce(steps('afdB').afdBEndpoint.name, 'N/A'), '</b> (hostName: ', coalesce(steps('afdB').afdBEndpoint.properties.hostName, 'N/A'), ')</li><li>📊 <b>Routes (route-to-*):</b> ', string(length(filter(coalesce(steps('afdB').afdBRoutes.value, parse('[]')), (r) => startsWith(r.name, 'route-to-')))), ' total, ', string(length(filter(coalesce(steps('afdB').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))))), ' with Bilanciamento</li><li>📋 <b>Bilanciamento Rulesets:</b> ', string(length(filter(coalesce(steps('afdB').afdBRuleSets.value, parse('[]')), (rs) => if(and(startsWith(rs.name, 'Bilanciamento'), greater(length(rs.name), 13)), and(contains(rs.name, 'SiteA'), contains(rs.name, 'SiteB')), false)))), ' found</li></ul>')]"
+                                "text": "[concat('✓ <b>AFD B Configuration Summary:</b><ul><li>FrontDoor profile: <b>', steps('afdBBasics').afdBProfileSelector.name, '</b> (sku: ', coalesce(steps('afdBBasics').afdBProfile.sku.name, 'N/A'), ')</li><li>Endpoint: <b>', coalesce(steps('afdBBasics').afdBEndpoint.name, 'N/A'), '</b> (hostName: ', coalesce(steps('afdBBasics').afdBEndpoint.properties.hostName, 'N/A'), ')</li><li>📊 <b>Routes (route-to-*):</b> ', string(length(filter(coalesce(steps('afdBBasics').afdBRoutes.value, parse('[]')), (r) => startsWith(r.name, 'route-to-')))), ' total, ', string(length(filter(coalesce(steps('afdBBasics').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))))), ' with Bilanciamento</li><li>📋 <b>Bilanciamento Rulesets:</b> ', string(length(filter(coalesce(steps('afdBBasics').afdBRuleSets.value, parse('[]')), (rs) => if(and(startsWith(rs.name, 'Bilanciamento'), greater(length(rs.name), 13)), and(contains(rs.name, 'SiteA'), contains(rs.name, 'SiteB')), false)))), ' found</li></ul>')]"
                             }
                         }
                     ]
                 },
                 {
-                    "name": "associations",
-                    "label": "Associations",
+                    "name": "afdBAssociations",
+                    "label": "AFD B - Associations",
                     "elements": [
+                        {
+                            "name": "afdBSkippedInfo",
+                            "type": "Microsoft.Common.InfoBox",
+                            "visible": "[empty(steps('afdBBasics').afdBEndpointSelector)]",
+                            "options": {
+                                "style": "Warning",
+                                "text": "<b>AFD B not configured</b><br/>No endpoint was selected for AFD B. Go back to the previous step if you want to configure AFD B."
+                            }
+                        },
                         {
                             "name": "afdBAssociationsHeader",
                             "type": "Microsoft.Common.InfoBox",
-                            "visible": true,
+                            "visible": "[not(empty(steps('afdBBasics').afdBEndpointSelector))]",
                             "options": {
                                 "style": "Info",
                                 "text": "<b>AFD B Load Balancing Configuration</b><br/>Select the load balancing percentage to apply to AFD B routes."
@@ -226,9 +348,9 @@
                             "placeholder": "Choose percentage distribution",
                             "filter": true,
                             "filterPlaceholder": "Filter items ...",
-                            "visible": "[not(empty(steps('afdB').afdBEndpointSelector))]",
+                            "visible": "[not(empty(steps('afdBBasics').afdBEndpointSelector))]",
                             "constraints": {
-                                "required": "[not(empty(steps('afdB').afdBEndpointSelector))]",
+                                "required": "[not(empty(steps('afdBBasics').afdBEndpointSelector))]",
                                 "allowedValues": [
                                     {"label": "SiteA0SiteB100", "value": "SiteA0SiteB100"},
                                     {"label": "SiteA10SiteB90", "value": "SiteA10SiteB90"},
@@ -245,68 +367,18 @@
                             }
                         },
                         {
-                            "name": "currentSelectionSummary",
+                            "name": "afdBCurrentSelectionSummary",
                             "type": "Microsoft.Common.InfoBox",
-                            "visible": "[and(not(empty(steps('afdB').afdBEndpointSelector)), not(empty(steps('associations').ddLoadBalancing)))]",
+                            "visible": "[and(not(empty(steps('afdBBasics').afdBEndpointSelector)), not(empty(steps('afdBAssociations').ddLoadBalancing)))]",
                             "options": {
                                 "style": "Info",
-                                "text": "[concat('✓ <b>Load Balancing Selected:</b> ', steps('associations').ddLoadBalancing, '<br/><br/><b>Routes that will be updated (', string(length(filter(coalesce(steps('afdB').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))))), ' routes):</b><br/>', replace(replace(replace(string(map(filter(coalesce(steps('afdB').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.name)), '[\"', '• '), '\",\"', '<br/>• '), '\"]', ''), '<br/><br/><i>Only routes matching <b>route-to-*</b> pattern AND already associated with a Bilanciamento ruleset are shown.</i><br/><br/><b>Ruleset Mapping Convention:</b><br/>• route-to-<i>xxx</i> → Bilanciamento<i>Xxx</i>', steps('associations').ddLoadBalancing)]"
-                            }
-                        },
-                        {
-                            "name": "validationCheck",
-                            "type": "Microsoft.Common.InfoBox",
-                            "visible": "[and(not(empty(steps('afdB').afdBEndpointSelector)), and(not(empty(steps('associations').ddLoadBalancing)), greater(length(filter(map(filter(coalesce(steps('afdB').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.name), (routeName) => not(contains(string(map(coalesce(steps('afdB').afdBRuleSets.value, parse('[]')), (rs) => toLower(rs.name))), toLower(concat('bilanciamento', replace(routeName, 'route-to-', ''), steps('associations').ddLoadBalancing)))))), 0)))]",
-                            "options": {
-                                "style": "Error",
-                                "text": "[concat('<b>ERROR: Missing Rulesets Detected!</b><br/><br/>One or more required rulesets do not exist in the Front Door profile.<br/><br/><b>Missing rulesets (', string(length(filter(map(filter(coalesce(steps('afdB').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.name), (routeName) => not(contains(string(map(coalesce(steps('afdB').afdBRuleSets.value, parse('[]')), (rs) => toLower(rs.name))), toLower(concat('bilanciamento', replace(routeName, 'route-to-', ''), steps('associations').ddLoadBalancing))))))), '):</b><br/>', replace(replace(replace(string(map(filter(map(filter(coalesce(steps('afdB').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.name), (routeName) => not(contains(string(map(coalesce(steps('afdB').afdBRuleSets.value, parse('[]')), (rs) => toLower(rs.name))), toLower(concat('bilanciamento', replace(routeName, 'route-to-', ''), steps('associations').ddLoadBalancing))))), (routeName) => concat('Bilanciamento', toUpper(first(replace(routeName, 'route-to-', ''))), skip(replace(routeName, 'route-to-', ''), 1), steps('associations').ddLoadBalancing))), '[\"', '• '), '\",\"', '<br/>• '), '\"]', ''), '<br/><br/>Please ensure all required Bilanciamento rulesets exist before proceeding with deployment.<br/><br/><i>Note: Ruleset names are case-insensitive (e.g., BilanciamentoAzureSiteA30SiteB70 and Bilanciamentoazuresitea30siteb70 are equivalent).</i>')]"
-                            }
-                        },
-                        {
-                            "name": "deploymentBlocker",
-                            "type": "Microsoft.Common.TextBox",
-                            "label": "Validation Status",
-                            "defaultValue": "DEPLOYMENT BLOCKED - Required rulesets are missing",
-                            "visible": "[and(not(empty(steps('afdB').afdBEndpointSelector)), and(not(empty(steps('associations').ddLoadBalancing)), greater(length(filter(map(filter(coalesce(steps('afdB').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.name), (routeName) => not(contains(string(map(coalesce(steps('afdB').afdBRuleSets.value, parse('[]')), (rs) => toLower(rs.name))), toLower(concat('bilanciamento', replace(routeName, 'route-to-', ''), steps('associations').ddLoadBalancing)))))), 0)))]",
-                            "constraints": {
-                                "required": true,
-                                "validations": [
-                                    {
-                                        "isValid": "[equals(1, 0)]",
-                                        "message": "Deployment blocked: Required rulesets are missing. Please create the missing Bilanciamento rulesets before proceeding."
-                                    }
-                                ]
-                            }
-                        },
-                        {
-                            "name": "noEligibleRoutesWarning",
-                            "type": "Microsoft.Common.InfoBox",
-                            "visible": "[and(not(empty(steps('afdB').afdBEndpointSelector)), and(not(empty(steps('associations').ddLoadBalancing)), equals(length(filter(coalesce(steps('afdB').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento')))), 0)))]",
-                            "options": {
-                                "style": "Error",
-                                "text": "<b>ERROR: No Eligible Routes Found!</b><br/><br/>No routes matching the required criteria were found.<br/><br/><b>Criteria for eligible routes:</b><br/>• Route name must follow the <b>route-to-*</b> pattern<br/>• Route must already have an association with a <b>Bilanciamento</b> ruleset<br/><br/>Please ensure at least one route meets both criteria before proceeding."
-                            }
-                        },
-                        {
-                            "name": "noEligibleRoutesBlocker",
-                            "type": "Microsoft.Common.TextBox",
-                            "label": "Validation Status",
-                            "defaultValue": "DEPLOYMENT BLOCKED - No eligible routes found",
-                            "visible": "[and(not(empty(steps('afdB').afdBEndpointSelector)), and(not(empty(steps('associations').ddLoadBalancing)), equals(length(filter(coalesce(steps('afdB').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento')))), 0)))]",
-                            "constraints": {
-                                "required": true,
-                                "validations": [
-                                    {
-                                        "isValid": "[equals(1, 0)]",
-                                        "message": "Deployment blocked: No eligible routes found. Routes must match route-to-* pattern AND have an existing Bilanciamento ruleset association."
-                                    }
-                                ]
+                                "text": "[concat('✓ <b>Load Balancing Selected:</b> ', steps('afdBAssociations').ddLoadBalancing, '<br/><br/><b>Routes that will be updated (', string(length(filter(coalesce(steps('afdBBasics').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))))), ' routes):</b><br/>', replace(replace(replace(string(map(filter(coalesce(steps('afdBBasics').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.name)), '[\"', '• '), '\",\"', '<br/>• '), '\"]', ''), '<br/><br/><i>Only routes matching <b>route-to-*</b> pattern AND already associated with a Bilanciamento ruleset are shown.</i><br/><br/><b>Ruleset Mapping Convention:</b><br/>• route-to-<i>xxx</i> → Bilanciamento<i>Xxx</i>', steps('afdBAssociations').ddLoadBalancing)]"
                             }
                         },
                         {
                             "name": "noAfdSelectedWarning",
                             "type": "Microsoft.Common.InfoBox",
-                            "visible": "[and(empty(steps('afdA').afdAEndpointSelector), empty(steps('afdB').afdBEndpointSelector))]",
+                            "visible": "[and(empty(steps('afdABasics').afdAEndpointSelector), empty(steps('afdBBasics').afdBEndpointSelector))]",
                             "options": {
                                 "style": "Error",
                                 "text": "<b>ERROR: No AFD Configuration Selected</b><br/><br/>Please configure at least one AFD (A or B) to proceed with deployment."
@@ -317,7 +389,7 @@
                             "type": "Microsoft.Common.TextBox",
                             "label": "Validation Status",
                             "defaultValue": "DEPLOYMENT BLOCKED - No AFD configured",
-                            "visible": "[and(empty(steps('afdA').afdAEndpointSelector), empty(steps('afdB').afdBEndpointSelector))]",
+                            "visible": "[and(empty(steps('afdABasics').afdAEndpointSelector), empty(steps('afdBBasics').afdBEndpointSelector))]",
                             "constraints": {
                                 "required": true,
                                 "validations": [
@@ -334,27 +406,41 @@
         },
         "outputs": {
             "parameters": {
-                "resourceGroupA": "[if(empty(steps('afdA').afdAProfileSelector.id), '', last(take(split(steps('afdA').afdAProfileSelector.id, '/'), 5)))]",
-                "afd_profile_idA": "[coalesce(steps('afdA').afdAProfile.id, '')]",
-                "afd_endpoint_idA": "[coalesce(steps('afdA').afdAEndpoint.id, '')]",
-                "resourceGroupB": "[if(empty(steps('afdB').afdBProfileSelector.id), '', last(take(split(steps('afdB').afdBProfileSelector.id, '/'), 5)))]",
-                "afd_profile_idB": "[coalesce(steps('afdB').afdBProfile.id, '')]",
-                "afd_endpoint_idB": "[coalesce(steps('afdB').afdBEndpoint.id, '')]",
-                "selected_load_balancingB": "[coalesce(steps('associations').ddLoadBalancing, '')]",
-                "afd_rulesetsB": "[coalesce(steps('afdB').afdBRuleSets.value, parse('[]'))]",
-                "route_namesB": "[map(filter(coalesce(steps('afdB').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.name)]",
-                "route_originGroupsB": "[map(filter(coalesce(steps('afdB').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.properties.originGroup.id)]",
-                "route_originPathB": "[map(filter(coalesce(steps('afdB').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.properties.originPath)]",
-                "route_customDomainsB": "[map(filter(coalesce(steps('afdB').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.properties.customDomains)]",
-                "route_patternsB": "[map(filter(coalesce(steps('afdB').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.properties.patternsToMatch)]",
-                "route_protocolsB": "[map(filter(coalesce(steps('afdB').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.properties.supportedProtocols)]",
-                "route_httpsRedirectB": "[map(filter(coalesce(steps('afdB').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.properties.httpsRedirect)]",
-                "route_forwardingProtoB": "[map(filter(coalesce(steps('afdB').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.properties.forwardingProtocol)]",
-                "route_enabledStateB": "[map(filter(coalesce(steps('afdB').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.properties.enabledState)]",
-                "route_linkToDefaultDomainB": "[map(filter(coalesce(steps('afdB').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.properties.linkToDefaultDomain)]",
-                "route_cacheConfigB": "[map(filter(coalesce(steps('afdB').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.properties.cacheConfiguration)]",
-                "route_currentRuleSetsB": "[map(filter(coalesce(steps('afdB').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.properties.ruleSets)]",
-                "all_route_idsB": "[map(filter(coalesce(steps('afdB').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.id)]"
+                "resourceGroupA": "[if(empty(steps('afdABasics').afdAProfileSelector.id), '', last(take(split(steps('afdABasics').afdAProfileSelector.id, '/'), 5)))]",
+                "afd_profile_idA": "[coalesce(steps('afdABasics').afdAProfile.id, '')]",
+                "afd_endpoint_idA": "[coalesce(steps('afdABasics').afdAEndpoint.id, '')]",
+                "selected_ruleset_idA": "[coalesce(steps('afdAAssociations').afdARulesetSelector, '---')]",
+                "selected_routesA": "[if(startsWith(string(steps('afdAAssociations').afdARouteSelector), '['), steps('afdAAssociations').afdARouteSelector, parse(concat('[\"', steps('afdAAssociations').afdARouteSelector, '\"]')))]",
+                "all_route_idsA": "[coalesce(steps('afdABasics').afdARoutes.transformed.routeIds, parse('[]'))]",
+                "route_originGroupsA": "[coalesce(steps('afdABasics').afdARoutes.transformed.originGroups, parse('[]'))]",
+                "route_originPathA": "[coalesce(steps('afdABasics').afdARoutes.transformed.originPath, parse('[]'))]",
+                "route_customDomainsA": "[coalesce(steps('afdABasics').afdARoutes.transformed.customDomains, parse('[]'))]",
+                "route_patternsA": "[coalesce(steps('afdABasics').afdARoutes.transformed.patterns, parse('[]'))]",
+                "route_protocolsA": "[coalesce(steps('afdABasics').afdARoutes.transformed.protocols, parse('[]'))]",
+                "route_httpsRedirectA": "[coalesce(steps('afdABasics').afdARoutes.transformed.httpsRedirect, parse('[]'))]",
+                "route_forwardingProtoA": "[coalesce(steps('afdABasics').afdARoutes.transformed.forwardingProtocol, parse('[]'))]",
+                "route_enabledStateA": "[coalesce(steps('afdABasics').afdARoutes.transformed.enabledState, parse('[]'))]",
+                "route_linkToDefaultDomainA": "[coalesce(steps('afdABasics').afdARoutes.transformed.linkToDefaultDomain, parse('[]'))]",
+                "route_cacheConfigA": "[coalesce(steps('afdABasics').afdARoutes.transformed.cacheConfiguration, parse('[]'))]",
+                "route_currentRuleSetsA": "[coalesce(steps('afdABasics').afdARoutes.transformed.currentRuleSets, parse('[]'))]",
+                "resourceGroupB": "[if(empty(steps('afdBBasics').afdBProfileSelector.id), '', last(take(split(steps('afdBBasics').afdBProfileSelector.id, '/'), 5)))]",
+                "afd_profile_idB": "[coalesce(steps('afdBBasics').afdBProfile.id, '')]",
+                "afd_endpoint_idB": "[coalesce(steps('afdBBasics').afdBEndpoint.id, '')]",
+                "selected_load_balancingB": "[coalesce(steps('afdBAssociations').ddLoadBalancing, '')]",
+                "afd_rulesetsB": "[coalesce(steps('afdBBasics').afdBRuleSets.value, parse('[]'))]",
+                "route_namesB": "[map(filter(coalesce(steps('afdBBasics').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.name)]",
+                "route_originGroupsB": "[map(filter(coalesce(steps('afdBBasics').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.properties.originGroup.id)]",
+                "route_originPathB": "[map(filter(coalesce(steps('afdBBasics').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.properties.originPath)]",
+                "route_customDomainsB": "[map(filter(coalesce(steps('afdBBasics').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.properties.customDomains)]",
+                "route_patternsB": "[map(filter(coalesce(steps('afdBBasics').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.properties.patternsToMatch)]",
+                "route_protocolsB": "[map(filter(coalesce(steps('afdBBasics').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.properties.supportedProtocols)]",
+                "route_httpsRedirectB": "[map(filter(coalesce(steps('afdBBasics').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.properties.httpsRedirect)]",
+                "route_forwardingProtoB": "[map(filter(coalesce(steps('afdBBasics').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.properties.forwardingProtocol)]",
+                "route_enabledStateB": "[map(filter(coalesce(steps('afdBBasics').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.properties.enabledState)]",
+                "route_linkToDefaultDomainB": "[map(filter(coalesce(steps('afdBBasics').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.properties.linkToDefaultDomain)]",
+                "route_cacheConfigB": "[map(filter(coalesce(steps('afdBBasics').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.properties.cacheConfiguration)]",
+                "route_currentRuleSetsB": "[map(filter(coalesce(steps('afdBBasics').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.properties.ruleSets)]",
+                "all_route_idsB": "[map(filter(coalesce(steps('afdBBasics').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.id)]"
             },
             "kind": "Subscription",
             "location": "[steps('basics').resourceScope.location.name]",

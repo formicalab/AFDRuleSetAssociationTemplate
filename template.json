@@ -308,7 +308,7 @@
                     "variables": {
                         "afd_profile_name": "[last(split(parameters('afd_profile_id'), '/'))]",
                         "afd_endpoint_name": "[last(split(parameters('afd_endpoint_id'), '/'))]",
-                        "processedRuleSets": "[map(parameters('selected_routes'), lambda('routeId', if(equals(parameters('selected_ruleset_id'), '---'), filter(parameters('route_currentRuleSets')[indexOf(parameters('all_route_ids'), lambdaVariables('routeId'))], lambda('rs', not(startsWith(last(split(lambdaVariables('rs').id, '/')), 'Bilanciamento')))), if(greater(length(filter(parameters('route_currentRuleSets')[indexOf(parameters('all_route_ids'), lambdaVariables('routeId'))], lambda('rs', startsWith(last(split(lambdaVariables('rs').id, '/')), 'Bilanciamento')))), 0), map(parameters('route_currentRuleSets')[indexOf(parameters('all_route_ids'), lambdaVariables('routeId'))], lambda('rs', if(startsWith(last(split(lambdaVariables('rs').id, '/')), 'Bilanciamento'), createObject('id', parameters('selected_ruleset_id')), lambdaVariables('rs')))), concat(parameters('route_currentRuleSets')[indexOf(parameters('all_route_ids'), lambdaVariables('routeId'))], array(createObject('id', parameters('selected_ruleset_id'))))))))]"
+                        "processedRuleSets": "[if(equals(length(parameters('selected_routes')), 0), createArray(), map(parameters('selected_routes'), lambda('routeId', if(equals(parameters('selected_ruleset_id'), '---'), filter(parameters('route_currentRuleSets')[indexOf(parameters('all_route_ids'), lambdaVariables('routeId'))], lambda('rs', not(startsWith(last(split(lambdaVariables('rs').id, '/')), 'Bilanciamento')))), if(greater(length(filter(parameters('route_currentRuleSets')[indexOf(parameters('all_route_ids'), lambdaVariables('routeId'))], lambda('rs', startsWith(last(split(lambdaVariables('rs').id, '/')), 'Bilanciamento')))), 0), map(parameters('route_currentRuleSets')[indexOf(parameters('all_route_ids'), lambdaVariables('routeId'))], lambda('rs', if(startsWith(last(split(lambdaVariables('rs').id, '/')), 'Bilanciamento'), createObject('id', parameters('selected_ruleset_id')), lambdaVariables('rs')))), concat(parameters('route_currentRuleSets')[indexOf(parameters('all_route_ids'), lambdaVariables('routeId'))], array(createObject('id', parameters('selected_ruleset_id')))))))))]"
                     },
                     "resources": {
                         "afdEndpoint": {
@@ -408,8 +408,8 @@
                     "variables": {
                         "afd_profile_name": "[last(split(parameters('afd_profile_id'), '/'))]",
                         "afd_endpoint_name": "[last(split(parameters('afd_endpoint_id'), '/'))]",
-                        "route_identifiers": "[map(range(0, length(parameters('route_names'))), lambda('i', concat(toUpper(substring(parameters('route_names')[lambdaVariables('i')], 9, 1)), substring(parameters('route_names')[lambdaVariables('i')], 10))))]",
-                        "processedRuleSets": "[map(range(0, length(parameters('route_names'))), lambda('i', map(parameters('route_currentRuleSets')[lambdaVariables('i')], lambda('rs', if(startsWith(last(split(lambdaVariables('rs').id, '/')), 'Bilanciamento'), createObject('id', first(map(filter(parameters('afd_rulesets'), lambda('ruleset', equals(toLower(lambdaVariables('ruleset').name), toLower(concat('Bilanciamento', variables('route_identifiers')[lambdaVariables('i')], parameters('selected_load_balancing')))))), lambda('ruleset', lambdaVariables('ruleset').id)))), lambdaVariables('rs'))))))]"
+                        "route_identifiers": "[if(equals(length(parameters('route_names')), 0), createArray(), map(range(0, length(parameters('route_names'))), lambda('i', concat(toUpper(substring(parameters('route_names')[lambdaVariables('i')], 9, 1)), substring(parameters('route_names')[lambdaVariables('i')], 10)))))]",
+                        "processedRuleSets": "[if(equals(length(parameters('route_names')), 0), createArray(), map(range(0, length(parameters('route_names'))), lambda('i', map(parameters('route_currentRuleSets')[lambdaVariables('i')], lambda('rs', if(startsWith(last(split(lambdaVariables('rs').id, '/')), 'Bilanciamento'), createObject('id', first(map(filter(parameters('afd_rulesets'), lambda('ruleset', equals(toLower(lambdaVariables('ruleset').name), toLower(concat('Bilanciamento', variables('route_identifiers')[lambdaVariables('i')], parameters('selected_load_balancing')))))), lambda('ruleset', lambdaVariables('ruleset').id)))), lambdaVariables('rs')))))))]"
                     },
                     "resources": {
                         "afdEndpoint": {
@@ -470,6 +470,30 @@
         "afdBRoutesUpdated": {
             "type": "int",
             "value": "[if(variables('deployAfdB'), reference('afdBDeployment').outputs.routesUpdated.value, 0)]"
+        },
+        "DEBUG_resourceGroupA": {
+            "type": "string",
+            "value": "[coalesce(parameters('resourceGroupA'), '(null)')]"
+        },
+        "DEBUG_selected_routesA": {
+            "type": "array",
+            "value": "[coalesce(parameters('selected_routesA'), createArray('(null)'))]"
+        },
+        "DEBUG_selected_routesA_length": {
+            "type": "int",
+            "value": "[length(coalesce(parameters('selected_routesA'), createArray()))]"
+        },
+        "DEBUG_selected_ruleset_idA": {
+            "type": "string",
+            "value": "[coalesce(parameters('selected_ruleset_idA'), '(null)')]"
+        },
+        "DEBUG_all_route_idsA": {
+            "type": "array",
+            "value": "[coalesce(parameters('all_route_idsA'), createArray('(null)'))]"
+        },
+        "DEBUG_all_route_idsA_length": {
+            "type": "int",
+            "value": "[length(coalesce(parameters('all_route_idsA'), createArray()))]"
         }
     }
 }
