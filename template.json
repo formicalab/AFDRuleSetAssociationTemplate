@@ -1,151 +1,475 @@
 {
-    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+    "languageVersion": "2.0",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "afd_profile_id": {
+        "resourceGroupA": {
             "type": "string",
+            "defaultValue": "",
             "metadata": {
-                "description": "The ID of the Azure Front Door profile"
+                "description": "Resource group name for AFD A. Leave empty to skip AFD A deployment."
             }
         },
-        "afd_endpoint_id": {
+        "afd_profile_idA": {
             "type": "string",
+            "defaultValue": "",
             "metadata": {
-                "description": "The ID of the Azure Front Door endpoint"
+                "description": "The ID of the Azure Front Door profile A"
             }
         },
-        "selected_load_balancing": {
+        "afd_endpoint_idA": {
             "type": "string",
+            "defaultValue": "",
             "metadata": {
-                "description": "The selected load balancing percentage (e.g., SiteA50SiteB50)"
+                "description": "The ID of the Azure Front Door endpoint A"
             }
         },
-        "afd_rulesets": {
-            "type": "array",
+        "selected_ruleset_idA": {
+            "type": "string",
+            "defaultValue": "---",
             "metadata": {
-                "description": "Array of all rulesets in the Front Door profile (with id and name properties)"
+                "description": "The ID of the ruleset to apply to all routes in AFD A. Use '---' to remove Bilanciamento rulesets."
             }
         },
-        "route_names": {
+        "selected_routesA": {
             "type": "array",
+            "defaultValue": [],
             "metadata": {
-                "description": "Array of route names (same order as all_route_ids)"
+                "description": "The list of selected route IDs to apply the ruleset to in AFD A"
             }
         },
-        "route_originGroups": {
+        "all_route_idsA": {
             "type": "array",
+            "defaultValue": [],
             "metadata": {
-                "description": "The list of origin groups for the routes"
+                "description": "IDs of all routes in AFD A (index aligns with route properties arrays)"
             }
         },
-        "route_originPath": {
+        "route_originGroupsA": {
             "type": "array",
+            "defaultValue": [],
             "metadata": {
-                "description": "Origin path for each route"
+                "description": "The list of origin groups for the routes in AFD A"
             }
         },
-        "route_customDomains": {
+        "route_originPathA": {
             "type": "array",
+            "defaultValue": [],
             "metadata": {
-                "description": "The list of custom domains for the routes"
+                "description": "Origin path for each route in AFD A"
             }
         },
-        "route_patterns": {
+        "route_customDomainsA": {
             "type": "array",
+            "defaultValue": [],
             "metadata": {
-                "description": "Patterns to match for each route"
+                "description": "The list of custom domains for the routes in AFD A"
             }
         },
-        "route_protocols": {
+        "route_patternsA": {
             "type": "array",
+            "defaultValue": [],
             "metadata": {
-                "description": "Supported protocols for each route"
+                "description": "Patterns to match for each route in AFD A"
             }
         },
-        "route_httpsRedirect": {
+        "route_protocolsA": {
             "type": "array",
+            "defaultValue": [],
             "metadata": {
-                "description": "HTTPS redirect settings for each route"
+                "description": "Supported protocols for each route in AFD A"
             }
         },
-        "route_forwardingProto": {
+        "route_httpsRedirectA": {
             "type": "array",
+            "defaultValue": [],
             "metadata": {
-                "description": "Forwarding protocol for each route"
+                "description": "HTTPS redirect settings for each route in AFD A"
             }
         },
-        "route_enabledState": {
+        "route_forwardingProtoA": {
             "type": "array",
+            "defaultValue": [],
             "metadata": {
-                "description": "Enabled state for each route"
+                "description": "Forwarding protocol for each route in AFD A"
             }
         },
-        "route_linkToDefaultDomain": {
+        "route_enabledStateA": {
             "type": "array",
+            "defaultValue": [],
             "metadata": {
-                "description": "Link to default domain setting for each route"
+                "description": "Enabled state for each route in AFD A"
             }
         },
-        "route_cacheConfig": {
+        "route_linkToDefaultDomainA": {
             "type": "array",
+            "defaultValue": [],
             "metadata": {
-                "description": "Cache configuration for each route"
+                "description": "Link to default domain setting for each route in AFD A"
             }
         },
-        "route_currentRuleSets": {
+        "route_cacheConfigA": {
             "type": "array",
+            "defaultValue": [],
             "metadata": {
-                "description": "Current ruleset associations for each route (array of arrays)"
+                "description": "Cache configuration for each route in AFD A"
             }
         },
-        "all_route_ids": {
+        "route_currentRuleSetsA": {
             "type": "array",
+            "defaultValue": [],
             "metadata": {
-                "description": "IDs of all routes (index aligns with originGroups / customDomains)"
+                "description": "Current ruleset associations for each route in AFD A (array of arrays)"
+            }
+        },
+        "resourceGroupB": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Resource group name for AFD B. Leave empty to skip AFD B deployment."
+            }
+        },
+        "afd_profile_idB": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "The ID of the Azure Front Door profile B"
+            }
+        },
+        "afd_endpoint_idB": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "The ID of the Azure Front Door endpoint B"
+            }
+        },
+        "selected_load_balancingB": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "The selected load balancing percentage for AFD B (e.g., SiteA50SiteB50)"
+            }
+        },
+        "afd_rulesetsB": {
+            "type": "array",
+            "defaultValue": [],
+            "metadata": {
+                "description": "Array of all rulesets in Front Door profile B (with id and name properties)"
+            }
+        },
+        "route_namesB": {
+            "type": "array",
+            "defaultValue": [],
+            "metadata": {
+                "description": "Array of route names for AFD B (same order as all_route_idsB)"
+            }
+        },
+        "all_route_idsB": {
+            "type": "array",
+            "defaultValue": [],
+            "metadata": {
+                "description": "IDs of all routes in AFD B (index aligns with route properties arrays)"
+            }
+        },
+        "route_originGroupsB": {
+            "type": "array",
+            "defaultValue": [],
+            "metadata": {
+                "description": "The list of origin groups for the routes in AFD B"
+            }
+        },
+        "route_originPathB": {
+            "type": "array",
+            "defaultValue": [],
+            "metadata": {
+                "description": "Origin path for each route in AFD B"
+            }
+        },
+        "route_customDomainsB": {
+            "type": "array",
+            "defaultValue": [],
+            "metadata": {
+                "description": "The list of custom domains for the routes in AFD B"
+            }
+        },
+        "route_patternsB": {
+            "type": "array",
+            "defaultValue": [],
+            "metadata": {
+                "description": "Patterns to match for each route in AFD B"
+            }
+        },
+        "route_protocolsB": {
+            "type": "array",
+            "defaultValue": [],
+            "metadata": {
+                "description": "Supported protocols for each route in AFD B"
+            }
+        },
+        "route_httpsRedirectB": {
+            "type": "array",
+            "defaultValue": [],
+            "metadata": {
+                "description": "HTTPS redirect settings for each route in AFD B"
+            }
+        },
+        "route_forwardingProtoB": {
+            "type": "array",
+            "defaultValue": [],
+            "metadata": {
+                "description": "Forwarding protocol for each route in AFD B"
+            }
+        },
+        "route_enabledStateB": {
+            "type": "array",
+            "defaultValue": [],
+            "metadata": {
+                "description": "Enabled state for each route in AFD B"
+            }
+        },
+        "route_linkToDefaultDomainB": {
+            "type": "array",
+            "defaultValue": [],
+            "metadata": {
+                "description": "Link to default domain setting for each route in AFD B"
+            }
+        },
+        "route_cacheConfigB": {
+            "type": "array",
+            "defaultValue": [],
+            "metadata": {
+                "description": "Cache configuration for each route in AFD B"
+            }
+        },
+        "route_currentRuleSetsB": {
+            "type": "array",
+            "defaultValue": [],
+            "metadata": {
+                "description": "Current ruleset associations for each route in AFD B (array of arrays)"
             }
         }
     },
     "variables": {
-        "afd_profile_name": "[last(split(parameters('afd_profile_id'), '/'))]",
-        "afd_endpoint_name": "[last(split(parameters('afd_endpoint_id'), '/'))]",
-        
-        "route_identifiers": "[map(range(0, length(parameters('route_names'))), lambda('i', concat(toUpper(substring(parameters('route_names')[lambdaVariables('i')], 9, 1)), substring(parameters('route_names')[lambdaVariables('i')], 10))))]",
-        
-        "processedRuleSets": "[map(range(0, length(parameters('route_names'))), lambda('i', map(parameters('route_currentRuleSets')[lambdaVariables('i')], lambda('rs', if(startsWith(last(split(lambdaVariables('rs').id, '/')), 'Bilanciamento'), createObject('id', first(map(filter(parameters('afd_rulesets'), lambda('ruleset', equals(toLower(lambdaVariables('ruleset').name), toLower(concat('Bilanciamento', variables('route_identifiers')[lambdaVariables('i')], parameters('selected_load_balancing')))))), lambda('ruleset', lambdaVariables('ruleset').id)))), lambdaVariables('rs'))))))]"
+        "deployAfdA": "[and(not(empty(parameters('resourceGroupA'))), greater(length(parameters('selected_routesA')), 0))]",
+        "deployAfdB": "[and(not(empty(parameters('resourceGroupB'))), greater(length(parameters('all_route_idsB')), 0))]"
     },
-    "resources": [
-        {
-            "type": "Microsoft.Cdn/profiles/afdendpoints",
-            "apiVersion": "2025-04-15",
-            "name": "[concat(variables('afd_profile_name'), '/', variables('afd_endpoint_name'))]",
-            "location": "global"
-        },
-        {
-            "type": "Microsoft.Cdn/profiles/afdendpoints/routes",
-            "apiVersion": "2025-04-15",
-            "name": "[concat(variables('afd_profile_name'), '/', variables('afd_endpoint_name'), '/', last(split(parameters('all_route_ids')[copyIndex()], '/')))]",
-            "copy": {
-                "name": "routeAssociationLoop",
-                "count": "[length(parameters('all_route_ids'))]"
-            },
-            "dependsOn": [
-                "[resourceId('Microsoft.Cdn/profiles/afdendpoints', variables('afd_profile_name'), variables('afd_endpoint_name'))]"
-            ],
+    "resources": {
+        "afdADeployment": {
+            "condition": "[variables('deployAfdA')]",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2025-04-01",
+            "name": "afdA-routes-deployment",
+            "resourceGroup": "[parameters('resourceGroupA')]",
             "properties": {
-                "originGroup": {
-                    "id": "[parameters('route_originGroups')[copyIndex()]]"
+                "mode": "Incremental",
+                "expressionEvaluationOptions": {
+                    "scope": "Inner"
                 },
-                "originPath": "[parameters('route_originPath')[copyIndex()]]",
-                "customDomains": "[parameters('route_customDomains')[copyIndex()]]",
-                "patternsToMatch": "[parameters('route_patterns')[copyIndex()]]",
-                "supportedProtocols": "[parameters('route_protocols')[copyIndex()]]",
-                "httpsRedirect": "[parameters('route_httpsRedirect')[copyIndex()]]",
-                "forwardingProtocol": "[parameters('route_forwardingProto')[copyIndex()]]",
-                "enabledState": "[parameters('route_enabledState')[copyIndex()]]",
-                "linkToDefaultDomain": "[parameters('route_linkToDefaultDomain')[copyIndex()]]",
-                "cacheConfiguration": "[parameters('route_cacheConfig')[copyIndex()]]",
-                "ruleSets": "[variables('processedRuleSets')[copyIndex()]]"
+                "parameters": {
+                    "afd_profile_id": { "value": "[parameters('afd_profile_idA')]" },
+                    "afd_endpoint_id": { "value": "[parameters('afd_endpoint_idA')]" },
+                    "selected_ruleset_id": { "value": "[parameters('selected_ruleset_idA')]" },
+                    "selected_routes": { "value": "[parameters('selected_routesA')]" },
+                    "all_route_ids": { "value": "[parameters('all_route_idsA')]" },
+                    "route_originGroups": { "value": "[parameters('route_originGroupsA')]" },
+                    "route_originPath": { "value": "[parameters('route_originPathA')]" },
+                    "route_customDomains": { "value": "[parameters('route_customDomainsA')]" },
+                    "route_patterns": { "value": "[parameters('route_patternsA')]" },
+                    "route_protocols": { "value": "[parameters('route_protocolsA')]" },
+                    "route_httpsRedirect": { "value": "[parameters('route_httpsRedirectA')]" },
+                    "route_forwardingProto": { "value": "[parameters('route_forwardingProtoA')]" },
+                    "route_enabledState": { "value": "[parameters('route_enabledStateA')]" },
+                    "route_linkToDefaultDomain": { "value": "[parameters('route_linkToDefaultDomainA')]" },
+                    "route_cacheConfig": { "value": "[parameters('route_cacheConfigA')]" },
+                    "route_currentRuleSets": { "value": "[parameters('route_currentRuleSetsA')]" }
+                },
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                    "languageVersion": "2.0",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {
+                        "afd_profile_id": { "type": "string" },
+                        "afd_endpoint_id": { "type": "string" },
+                        "selected_ruleset_id": { "type": "string" },
+                        "selected_routes": { "type": "array" },
+                        "all_route_ids": { "type": "array" },
+                        "route_originGroups": { "type": "array" },
+                        "route_originPath": { "type": "array" },
+                        "route_customDomains": { "type": "array" },
+                        "route_patterns": { "type": "array" },
+                        "route_protocols": { "type": "array" },
+                        "route_httpsRedirect": { "type": "array" },
+                        "route_forwardingProto": { "type": "array" },
+                        "route_enabledState": { "type": "array" },
+                        "route_linkToDefaultDomain": { "type": "array" },
+                        "route_cacheConfig": { "type": "array" },
+                        "route_currentRuleSets": { "type": "array" }
+                    },
+                    "variables": {
+                        "afd_profile_name": "[last(split(parameters('afd_profile_id'), '/'))]",
+                        "afd_endpoint_name": "[last(split(parameters('afd_endpoint_id'), '/'))]",
+                        "processedRuleSets": "[map(parameters('selected_routes'), lambda('routeId', if(equals(parameters('selected_ruleset_id'), '---'), filter(parameters('route_currentRuleSets')[indexOf(parameters('all_route_ids'), lambdaVariables('routeId'))], lambda('rs', not(startsWith(last(split(lambdaVariables('rs').id, '/')), 'Bilanciamento')))), if(greater(length(filter(parameters('route_currentRuleSets')[indexOf(parameters('all_route_ids'), lambdaVariables('routeId'))], lambda('rs', startsWith(last(split(lambdaVariables('rs').id, '/')), 'Bilanciamento')))), 0), map(parameters('route_currentRuleSets')[indexOf(parameters('all_route_ids'), lambdaVariables('routeId'))], lambda('rs', if(startsWith(last(split(lambdaVariables('rs').id, '/')), 'Bilanciamento'), createObject('id', parameters('selected_ruleset_id')), lambdaVariables('rs')))), concat(parameters('route_currentRuleSets')[indexOf(parameters('all_route_ids'), lambdaVariables('routeId'))], array(createObject('id', parameters('selected_ruleset_id'))))))))]"
+                    },
+                    "resources": {
+                        "afdEndpoint": {
+                            "type": "Microsoft.Cdn/profiles/afdEndpoints",
+                            "apiVersion": "2025-06-01",
+                            "name": "[format('{0}/{1}', variables('afd_profile_name'), variables('afd_endpoint_name'))]",
+                            "existing": true
+                        },
+                        "routes": {
+                            "copy": {
+                                "name": "routesCopy",
+                                "count": "[length(parameters('selected_routes'))]"
+                            },
+                            "type": "Microsoft.Cdn/profiles/afdEndpoints/routes",
+                            "apiVersion": "2025-06-01",
+                            "name": "[format('{0}/{1}/{2}', variables('afd_profile_name'), variables('afd_endpoint_name'), last(split(parameters('selected_routes')[copyIndex()], '/')))]",
+                            "dependsOn": ["afdEndpoint"],
+                            "properties": {
+                                "originGroup": {
+                                    "id": "[parameters('route_originGroups')[indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()])]]"
+                                },
+                                "originPath": "[parameters('route_originPath')[indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()])]]",
+                                "customDomains": "[parameters('route_customDomains')[indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()])]]",
+                                "patternsToMatch": "[parameters('route_patterns')[indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()])]]",
+                                "supportedProtocols": "[parameters('route_protocols')[indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()])]]",
+                                "httpsRedirect": "[parameters('route_httpsRedirect')[indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()])]]",
+                                "forwardingProtocol": "[parameters('route_forwardingProto')[indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()])]]",
+                                "enabledState": "[parameters('route_enabledState')[indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()])]]",
+                                "linkToDefaultDomain": "[parameters('route_linkToDefaultDomain')[indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()])]]",
+                                "cacheConfiguration": "[parameters('route_cacheConfig')[indexOf(parameters('all_route_ids'), parameters('selected_routes')[copyIndex()])]]",
+                                "ruleSets": "[variables('processedRuleSets')[copyIndex()]]"
+                            }
+                        }
+                    },
+                    "outputs": {
+                        "routesUpdated": {
+                            "type": "int",
+                            "value": "[length(parameters('selected_routes'))]"
+                        }
+                    }
+                }
+            }
+        },
+        "afdBDeployment": {
+            "condition": "[variables('deployAfdB')]",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2025-04-01",
+            "name": "afdB-routes-deployment",
+            "resourceGroup": "[parameters('resourceGroupB')]",
+            "properties": {
+                "mode": "Incremental",
+                "expressionEvaluationOptions": {
+                    "scope": "Inner"
+                },
+                "parameters": {
+                    "afd_profile_id": { "value": "[parameters('afd_profile_idB')]" },
+                    "afd_endpoint_id": { "value": "[parameters('afd_endpoint_idB')]" },
+                    "selected_load_balancing": { "value": "[parameters('selected_load_balancingB')]" },
+                    "afd_rulesets": { "value": "[parameters('afd_rulesetsB')]" },
+                    "route_names": { "value": "[parameters('route_namesB')]" },
+                    "all_route_ids": { "value": "[parameters('all_route_idsB')]" },
+                    "route_originGroups": { "value": "[parameters('route_originGroupsB')]" },
+                    "route_originPath": { "value": "[parameters('route_originPathB')]" },
+                    "route_customDomains": { "value": "[parameters('route_customDomainsB')]" },
+                    "route_patterns": { "value": "[parameters('route_patternsB')]" },
+                    "route_protocols": { "value": "[parameters('route_protocolsB')]" },
+                    "route_httpsRedirect": { "value": "[parameters('route_httpsRedirectB')]" },
+                    "route_forwardingProto": { "value": "[parameters('route_forwardingProtoB')]" },
+                    "route_enabledState": { "value": "[parameters('route_enabledStateB')]" },
+                    "route_linkToDefaultDomain": { "value": "[parameters('route_linkToDefaultDomainB')]" },
+                    "route_cacheConfig": { "value": "[parameters('route_cacheConfigB')]" },
+                    "route_currentRuleSets": { "value": "[parameters('route_currentRuleSetsB')]" }
+                },
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                    "languageVersion": "2.0",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {
+                        "afd_profile_id": { "type": "string" },
+                        "afd_endpoint_id": { "type": "string" },
+                        "selected_load_balancing": { "type": "string" },
+                        "afd_rulesets": { "type": "array" },
+                        "route_names": { "type": "array" },
+                        "all_route_ids": { "type": "array" },
+                        "route_originGroups": { "type": "array" },
+                        "route_originPath": { "type": "array" },
+                        "route_customDomains": { "type": "array" },
+                        "route_patterns": { "type": "array" },
+                        "route_protocols": { "type": "array" },
+                        "route_httpsRedirect": { "type": "array" },
+                        "route_forwardingProto": { "type": "array" },
+                        "route_enabledState": { "type": "array" },
+                        "route_linkToDefaultDomain": { "type": "array" },
+                        "route_cacheConfig": { "type": "array" },
+                        "route_currentRuleSets": { "type": "array" }
+                    },
+                    "variables": {
+                        "afd_profile_name": "[last(split(parameters('afd_profile_id'), '/'))]",
+                        "afd_endpoint_name": "[last(split(parameters('afd_endpoint_id'), '/'))]",
+                        "route_identifiers": "[map(range(0, length(parameters('route_names'))), lambda('i', concat(toUpper(substring(parameters('route_names')[lambdaVariables('i')], 9, 1)), substring(parameters('route_names')[lambdaVariables('i')], 10))))]",
+                        "processedRuleSets": "[map(range(0, length(parameters('route_names'))), lambda('i', map(parameters('route_currentRuleSets')[lambdaVariables('i')], lambda('rs', if(startsWith(last(split(lambdaVariables('rs').id, '/')), 'Bilanciamento'), createObject('id', first(map(filter(parameters('afd_rulesets'), lambda('ruleset', equals(toLower(lambdaVariables('ruleset').name), toLower(concat('Bilanciamento', variables('route_identifiers')[lambdaVariables('i')], parameters('selected_load_balancing')))))), lambda('ruleset', lambdaVariables('ruleset').id)))), lambdaVariables('rs'))))))]"
+                    },
+                    "resources": {
+                        "afdEndpoint": {
+                            "type": "Microsoft.Cdn/profiles/afdEndpoints",
+                            "apiVersion": "2025-06-01",
+                            "name": "[format('{0}/{1}', variables('afd_profile_name'), variables('afd_endpoint_name'))]",
+                            "existing": true
+                        },
+                        "routes": {
+                            "copy": {
+                                "name": "routesCopy",
+                                "count": "[length(parameters('all_route_ids'))]"
+                            },
+                            "type": "Microsoft.Cdn/profiles/afdEndpoints/routes",
+                            "apiVersion": "2025-06-01",
+                            "name": "[format('{0}/{1}/{2}', variables('afd_profile_name'), variables('afd_endpoint_name'), last(split(parameters('all_route_ids')[copyIndex()], '/')))]",
+                            "dependsOn": ["afdEndpoint"],
+                            "properties": {
+                                "originGroup": {
+                                    "id": "[parameters('route_originGroups')[copyIndex()]]"
+                                },
+                                "originPath": "[parameters('route_originPath')[copyIndex()]]",
+                                "customDomains": "[parameters('route_customDomains')[copyIndex()]]",
+                                "patternsToMatch": "[parameters('route_patterns')[copyIndex()]]",
+                                "supportedProtocols": "[parameters('route_protocols')[copyIndex()]]",
+                                "httpsRedirect": "[parameters('route_httpsRedirect')[copyIndex()]]",
+                                "forwardingProtocol": "[parameters('route_forwardingProto')[copyIndex()]]",
+                                "enabledState": "[parameters('route_enabledState')[copyIndex()]]",
+                                "linkToDefaultDomain": "[parameters('route_linkToDefaultDomain')[copyIndex()]]",
+                                "cacheConfiguration": "[parameters('route_cacheConfig')[copyIndex()]]",
+                                "ruleSets": "[variables('processedRuleSets')[copyIndex()]]"
+                            }
+                        }
+                    },
+                    "outputs": {
+                        "routesUpdated": {
+                            "type": "int",
+                            "value": "[length(parameters('all_route_ids'))]"
+                        }
+                    }
+                }
             }
         }
-    ]
+    },
+    "outputs": {
+        "afdADeployed": {
+            "type": "bool",
+            "value": "[variables('deployAfdA')]"
+        },
+        "afdBDeployed": {
+            "type": "bool",
+            "value": "[variables('deployAfdB')]"
+        },
+        "afdARoutesUpdated": {
+            "type": "int",
+            "value": "[if(variables('deployAfdA'), reference('afdADeployment').outputs.routesUpdated.value, 0)]"
+        },
+        "afdBRoutesUpdated": {
+            "type": "int",
+            "value": "[if(variables('deployAfdB'), reference('afdBDeployment').outputs.routesUpdated.value, 0)]"
+        }
+    }
 }
