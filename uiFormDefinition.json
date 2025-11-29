@@ -151,7 +151,7 @@
                         {
                             "name": "afdANoLoadBalancingRulesetsInfo",
                             "type": "Microsoft.Common.InfoBox",
-                            "visible": "[equals(length(filter(steps('afdABasics').afdARuleSets.transformed.listWithRemove, (item) => startsWith(toLower(item.label), 'bilanciamento'))), 0)]",
+                            "visible": "[and(not(empty(steps('afdABasics').afdAEndpointSelector)), equals(length(filter(steps('afdABasics').afdARuleSets.transformed.listWithRemove, (item) => startsWith(toLower(item.label), 'bilanciamento'))), 0))]",
                             "options": {
                                 "style": "Warning",
                                 "text": "No load balancing rulesets found in this Front Door profile. You can only remove existing load balancing associations by selecting '---'."
@@ -160,7 +160,7 @@
                         {
                             "name": "afdANoLoadBalancingRoutesWarning",
                             "type": "Microsoft.Common.InfoBox",
-                            "visible": "[equals(length(filter(steps('afdABasics').afdARoutes.transformed.routeList, (item) => greater(length(filter(item.ruleSetIds, (rs) => startsWith(toLower(last(split(rs.id, '/'))), 'bilanciamento'))), 0))), 0)]",
+                            "visible": "[and(not(empty(steps('afdABasics').afdAEndpointSelector)), equals(length(filter(steps('afdABasics').afdARoutes.transformed.routeList, (item) => greater(length(filter(item.ruleSetIds, (rs) => startsWith(toLower(last(split(rs.id, '/'))), 'bilanciamento'))), 0))), 0))]",
                             "options": {
                                 "style": "Warning",
                                 "text": "No routes currently have load balancing rulesets associated. You must first associate load balancing rulesets to routes before using this template. Only routes with existing load balancing rulesets can be modified."
@@ -169,7 +169,7 @@
                         {
                             "name": "afdAWarningMessage",
                             "type": "Microsoft.Common.InfoBox",
-                            "visible": true,
+                            "visible": "[not(empty(steps('afdABasics').afdAEndpointSelector))]",
                             "options": {
                                 "style": "Info",
                                 "text": "[concat('📊 <b>Routes:</b> ', string(length(filter(steps('afdABasics').afdARoutes.transformed.routeList, (r) => greater(length(filter(r.ruleSetIds, (rs) => startsWith(toLower(last(split(rs.id, '/'))), 'bilanciamento'))), 0)))), ' of ', string(length(steps('afdABasics').afdARoutes.value)), ' have load balancing rulesets configured<br/>📊 <b>Available rulesets:</b> ', string(length(filter(steps('afdABasics').afdARuleSets.value, (item) => startsWith(toLower(item.name), 'bilanciamento')))), ' load balancing of ', string(length(steps('afdABasics').afdARuleSets.value)), ' total<br/><br/>This operation will manage load balancing rulesets (names start with <b>Bilanciamento</b>) for routes that already have them configured.<br/><br/><b>Choices:</b><br/>• Select a load balancing ruleset: existing load balancing rulesets will be replaced with your selection. Other rulesets will be preserved.<br/>• Select \\'---\\': all load balancing rulesets will be removed. Other rulesets will be preserved.<br/><br/><b>Note:</b> Only routes with existing load balancing rulesets are shown in the dropdown below.')]"
@@ -182,15 +182,16 @@
                             "placeholder": "Only load balancing rulesets are shown",
                             "filter": true,
                             "filterPlaceholder": "Filter items ...",
+                            "visible": "[not(empty(steps('afdABasics').afdAEndpointSelector))]",
                             "constraints": {
-                                "required": true,
+                                "required": "[not(empty(steps('afdABasics').afdAEndpointSelector))]",
                                 "allowedValues": "[filter(steps('afdABasics').afdARuleSets.transformed.listWithRemove, (item) => or(equals(item.value, '---'), startsWith(toLower(item.label), 'bilanciamento')))]"
                             }
                         },
                         {
                             "name": "afdACurrentSelectionSummary",
                             "type": "Microsoft.Common.TextBlock",
-                            "visible": "[not(empty(steps('afdAAssociations').afdARulesetSelector))]",
+                            "visible": "[and(not(empty(steps('afdABasics').afdAEndpointSelector)), not(empty(steps('afdAAssociations').afdARulesetSelector)))]",
                             "options": {
                                 "text": "[concat('✓ <b>Selected:</b> ', if(equals(steps('afdAAssociations').afdARulesetSelector, '---'), 'Remove all load balancing rulesets', concat('Replace with <b>', last(split(steps('afdAAssociations').afdARulesetSelector, '/')), '</b>')))]"
                             }
@@ -207,9 +208,9 @@
                             "defaultDescription": "Route with load balancing",
                             "constraints": {
                                 "allowedValues": "[map(filter(steps('afdABasics').afdARoutes.transformed.routeList, (item) => greater(length(filter(item.ruleSetIds, (rs) => startsWith(toLower(last(split(rs.id, '/'))), 'bilanciamento'))), 0)), (item) => parse(concat('{\"label\":\"', item.label, '\",\"value\":\"', item.value, '\",\"description\":\"', concat(string(length(item.ruleSetIds)), ' rulesets (has load balancing)'), '\"}')))]",
-                                "required": true
+                                "required": "[not(empty(steps('afdABasics').afdAEndpointSelector))]"
                             },
-                            "visible": true
+                            "visible": "[not(empty(steps('afdABasics').afdAEndpointSelector))]"
                         }
                     ]
                 },
@@ -373,6 +374,56 @@
                             "options": {
                                 "style": "Info",
                                 "text": "[concat('✓ <b>Load Balancing Selected:</b> ', steps('afdBAssociations').ddLoadBalancing, '<br/><br/><b>Routes that will be updated (', string(length(filter(coalesce(steps('afdBBasics').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))))), ' routes):</b><br/>', replace(replace(replace(string(map(filter(coalesce(steps('afdBBasics').afdBRoutes.value, parse('[]')), (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.name)), '[\"', '• '), '\",\"', '<br/>• '), '\"]', ''), '<br/><br/><i>Only routes matching <b>route-to-*</b> pattern AND already associated with a Bilanciamento ruleset are shown.</i><br/><br/><b>Ruleset Mapping Convention:</b><br/>• route-to-<i>xxx</i> → Bilanciamento<i>Xxx</i>', steps('afdBAssociations').ddLoadBalancing)]"
+                            }
+                        },
+                        {
+                            "name": "validationCheck",
+                            "type": "Microsoft.Common.InfoBox",
+                            "visible": "[and(not(empty(steps('afdBBasics').afdBEndpointSelector)), and(not(empty(steps('afdBAssociations').ddLoadBalancing)), greater(length(filter(map(filter(steps('afdBBasics').afdBRoutes.value, (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.name), (routeName) => not(contains(string(map(steps('afdBBasics').afdBRuleSets.value, (rs) => toLower(rs.name))), toLower(concat('bilanciamento', replace(routeName, 'route-to-', ''), steps('afdBAssociations').ddLoadBalancing)))))), 0)))]",
+                            "options": {
+                                "style": "Error",
+                                "text": "[concat('<b>ERROR: Missing Rulesets Detected!</b><br/><br/>One or more required rulesets do not exist in the Front Door profile.<br/><br/><b>Missing rulesets (', string(length(filter(map(filter(steps('afdBBasics').afdBRoutes.value, (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.name), (routeName) => not(contains(string(map(steps('afdBBasics').afdBRuleSets.value, (rs) => toLower(rs.name))), toLower(concat('bilanciamento', replace(routeName, 'route-to-', ''), steps('afdBAssociations').ddLoadBalancing))))))), '):</b><br/>', replace(replace(replace(string(map(filter(map(filter(steps('afdBBasics').afdBRoutes.value, (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.name), (routeName) => not(contains(string(map(steps('afdBBasics').afdBRuleSets.value, (rs) => toLower(rs.name))), toLower(concat('bilanciamento', replace(routeName, 'route-to-', ''), steps('afdBAssociations').ddLoadBalancing))))), (routeName) => concat('Bilanciamento', toUpper(first(replace(routeName, 'route-to-', ''))), skip(replace(routeName, 'route-to-', ''), 1), steps('afdBAssociations').ddLoadBalancing))), '[\"', '• '), '\",\"', '<br/>• '), '\"]', ''), '<br/><br/>Please ensure all required Bilanciamento rulesets exist before proceeding with deployment.<br/><br/><i>Note: Ruleset names are case-insensitive (e.g., BilanciamentoAzureSiteA30SiteB70 and Bilanciamentoazuresitea30siteb70 are equivalent).</i>')]"
+                            }
+                        },
+                        {
+                            "name": "deploymentBlocker",
+                            "type": "Microsoft.Common.TextBox",
+                            "label": "Validation Status",
+                            "defaultValue": "DEPLOYMENT BLOCKED - Required rulesets are missing",
+                            "visible": "[and(not(empty(steps('afdBBasics').afdBEndpointSelector)), and(not(empty(steps('afdBAssociations').ddLoadBalancing)), greater(length(filter(map(filter(steps('afdBBasics').afdBRoutes.value, (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento'))), (r) => r.name), (routeName) => not(contains(string(map(steps('afdBBasics').afdBRuleSets.value, (rs) => toLower(rs.name))), toLower(concat('bilanciamento', replace(routeName, 'route-to-', ''), steps('afdBAssociations').ddLoadBalancing)))))), 0)))]",
+                            "constraints": {
+                                "required": true,
+                                "validations": [
+                                    {
+                                        "isValid": "[equals(1, 0)]",
+                                        "message": "Deployment blocked: Required rulesets are missing. Please create the missing Bilanciamento rulesets before proceeding."
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "name": "noEligibleRoutesWarning",
+                            "type": "Microsoft.Common.InfoBox",
+                            "visible": "[and(not(empty(steps('afdBBasics').afdBEndpointSelector)), and(not(empty(steps('afdBAssociations').ddLoadBalancing)), equals(length(filter(steps('afdBBasics').afdBRoutes.value, (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento')))), 0)))]",
+                            "options": {
+                                "style": "Error",
+                                "text": "<b>ERROR: No Eligible Routes Found!</b><br/><br/>No routes matching the required criteria were found.<br/><br/><b>Criteria for eligible routes:</b><br/>• Route name must follow the <b>route-to-*</b> pattern<br/>• Route must already have an association with a <b>Bilanciamento</b> ruleset<br/><br/>Please ensure at least one route meets both criteria before proceeding."
+                            }
+                        },
+                        {
+                            "name": "noEligibleRoutesBlocker",
+                            "type": "Microsoft.Common.TextBox",
+                            "label": "Validation Status",
+                            "defaultValue": "DEPLOYMENT BLOCKED - No eligible routes found",
+                            "visible": "[and(not(empty(steps('afdBBasics').afdBEndpointSelector)), and(not(empty(steps('afdBAssociations').ddLoadBalancing)), equals(length(filter(steps('afdBBasics').afdBRoutes.value, (r) => and(startsWith(r.name, 'route-to-'), contains(string(r.properties.ruleSets), 'Bilanciamento')))), 0)))]",
+                            "constraints": {
+                                "required": true,
+                                "validations": [
+                                    {
+                                        "isValid": "[equals(1, 0)]",
+                                        "message": "Deployment blocked: No eligible routes found. Routes must match route-to-* pattern AND have an existing Bilanciamento ruleset association."
+                                    }
+                                ]
                             }
                         },
                         {
